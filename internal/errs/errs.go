@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	InvalidTarget = errors.New("conform: invalid target")
-	InvalidSchema = errors.New("conform: invalid schema")
-	Decode        = errors.New("conform: decode error")
-	Validation    = errors.New("conform: validation failed")
+	InvalidTarget = errors.New("konform: invalid target")
+	InvalidSchema = errors.New("konform: invalid schema")
+	Decode        = errors.New("konform: decode error")
+	Validation    = errors.New("konform: validation failed")
 
 	InvalidSchemaNil        = fmt.Errorf("%w: nil schema", InvalidSchema)
 	InvalidSchemaNilOptions = fmt.Errorf("%w: nil load options", InvalidSchema)

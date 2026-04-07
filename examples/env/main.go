@@ -40,7 +40,7 @@ func (f *LogFormat) UnmarshalText(text []byte) error {
 
 type Config struct {
 	// defaulted string
-	AppName string `env:"APP_NAME" default:"conform-service"`
+	AppName string `env:"APP_NAME" default:"konform-service"`
 	// string -> int
 	Port int `env:"PORT" default:"8080"`
 	// string -> bool

@@ -36,7 +36,7 @@ func (e *ValidationError) Error() string {
 	}
 
 	var b strings.Builder
-	b.WriteString("conform: validation failed:")
+	b.WriteString("konform: validation failed:")
 	for _, field := range e.Fields {
 		b.WriteString("\n  - ")
 		b.WriteString(field.Error())

@@ -13,9 +13,9 @@ import (
 
 func TestLoad(t *testing.T) {
 	const (
-		envPort    = "CONFORM_TEST_ENV_PORT"
-		envDebug   = "CONFORM_TEST_ENV_DEBUG"
-		envTimeout = "CONFORM_TEST_ENV_TIMEOUT"
+		envPort    = "KONFORM_TEST_ENV_PORT"
+		envDebug   = "KONFORM_TEST_ENV_DEBUG"
+		envTimeout = "KONFORM_TEST_ENV_TIMEOUT"
 	)
 
 	type setupOut struct {

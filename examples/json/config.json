@@ -1,6 +1,6 @@
 {
   "App": {
-    "Name": "conform-service",
+    "Name": "konform-service",
     "Debug": true,
     "StartupTimeout": "5s",
     "AllowedOrigins": [
