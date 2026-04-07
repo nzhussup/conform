@@ -84,19 +84,6 @@ func TestFromEnv(t *testing.T) {
 }
 
 func TestFileOptions(t *testing.T) {
-	makeSchema := func(target *int) *schema.Schema {
-		return &schema.Schema{
-			Fields: []schema.Field{
-				{
-					Path:    "Port",
-					KeyName: "port",
-					Type:    reflect.TypeOf(0),
-					Value:   reflect.ValueOf(target).Elem(),
-				},
-			},
-		}
-	}
-
 	tests := []struct {
 		name        string
 		option      func(path string) Option
@@ -160,29 +147,14 @@ func TestFileOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			path := tt.path
-			if tt.content != "" {
-				dir := t.TempDir()
-				path = filepath.Join(dir, "config"+tt.ext)
-				if err := os.WriteFile(path, []byte(tt.content), 0o600); err != nil {
-					t.Fatalf("WriteFile() error = %v", err)
-				}
-			}
+			path := createOptionPath(t, tt.path, tt.ext, tt.content)
 
 			opt := tt.option(path)
-			err := opt(nil)
 			if tt.wantErrType != nil {
-				if err == nil {
-					t.Fatalf("option(nil) error = nil, want %v", tt.wantErrType)
-				}
-				if !errors.Is(err, tt.wantErrType) {
-					t.Fatalf("option(nil) error = %v, want wrapped %v", err, tt.wantErrType)
-				}
+				assertOptionError(t, opt(nil), tt.wantErrType)
 				return
 			}
-			if !errors.Is(err, errs.InvalidSchemaNilOptions) {
-				t.Fatalf("option(nil) error = %v, want wrapped %v", err, errs.InvalidSchemaNilOptions)
-			}
+			assertOptionError(t, opt(nil), errs.InvalidSchemaNilOptions)
 
 			o := &loadOptions{}
 			if err := opt(o); err != nil {
@@ -190,10 +162,47 @@ func TestFileOptions(t *testing.T) {
 			}
 
 			var port int
-			sc := makeSchema(&port)
+			sc := makePortSchema(&port)
 			if tt.validate != nil {
 				tt.validate(t, o, sc)
 			}
 		})
+	}
+}
+
+func makePortSchema(target *int) *schema.Schema {
+	return &schema.Schema{
+		Fields: []schema.Field{
+			{
+				Path:    "Port",
+				KeyName: "port",
+				Type:    reflect.TypeOf(0),
+				Value:   reflect.ValueOf(target).Elem(),
+			},
+		},
+	}
+}
+
+func createOptionPath(t *testing.T, explicitPath string, ext string, content string) string {
+	t.Helper()
+	if content == "" {
+		return explicitPath
+	}
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config"+ext)
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	return path
+}
+
+func assertOptionError(t *testing.T, err error, wantErr error) {
+	t.Helper()
+	if err == nil {
+		t.Fatalf("option(nil) error = nil, want %v", wantErr)
+	}
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("option(nil) error = %v, want wrapped %v", err, wantErr)
 	}
 }

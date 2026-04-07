@@ -27,12 +27,7 @@ func SetFieldValue(field schema.Field, raw any) error {
 
 func setValue(dst reflect.Value, raw any) error {
 	if dst.Type() == durationType {
-		v, err := toDuration(raw)
-		if err != nil {
-			return err
-		}
-		dst.SetInt(int64(v))
-		return nil
+		return setDurationValue(dst, raw)
 	}
 
 	if canDecodeWithTextUnmarshaler(dst) {
@@ -41,54 +36,83 @@ func setValue(dst reflect.Value, raw any) error {
 
 	switch dst.Kind() {
 	case reflect.String:
-		v, ok := raw.(string)
-		if !ok {
-			return fmt.Errorf("%w: expected string, got %T", errs.DecodeTypeMismatch, raw)
-		}
-		dst.SetString(v)
-		return nil
+		return setStringValue(dst, raw)
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		v, err := toInt64(raw)
-		if err != nil {
-			return err
-		}
-		if dst.OverflowInt(v) {
-			return fmt.Errorf("%w: %v overflows %s", errs.DecodeInvalidInt, v, dst.Type())
-		}
-		dst.SetInt(v)
-		return nil
+		return setIntValue(dst, raw)
 
 	case reflect.Bool:
-		v, err := toBool(raw)
-		if err != nil {
-			return err
-		}
-		dst.SetBool(v)
-		return nil
+		return setBoolValue(dst, raw)
 
 	case reflect.Float32, reflect.Float64:
-		v, err := toFloat64(raw)
-		if err != nil {
-			return err
-		}
-		if dst.OverflowFloat(v) {
-			return fmt.Errorf("%w: %v overflows %s", errs.DecodeInvalidFloat, v, dst.Type())
-		}
-		dst.SetFloat(v)
-		return nil
+		return setFloatValue(dst, raw)
 
 	case reflect.Slice:
-		v, err := toSlice(dst.Type(), raw)
-		if err != nil {
-			return err
-		}
-		dst.Set(v)
-		return nil
+		return setSliceValue(dst, raw)
 
 	default:
 		return fmt.Errorf("%w: %s", errs.DecodeUnsupported, dst.Type())
 	}
+}
+
+func setDurationValue(dst reflect.Value, raw any) error {
+	v, err := toDuration(raw)
+	if err != nil {
+		return err
+	}
+	dst.SetInt(int64(v))
+	return nil
+}
+
+func setStringValue(dst reflect.Value, raw any) error {
+	v, ok := raw.(string)
+	if !ok {
+		return fmt.Errorf("%w: expected string, got %T", errs.DecodeTypeMismatch, raw)
+	}
+	dst.SetString(v)
+	return nil
+}
+
+func setIntValue(dst reflect.Value, raw any) error {
+	v, err := toInt64(raw)
+	if err != nil {
+		return err
+	}
+	if dst.OverflowInt(v) {
+		return fmt.Errorf("%w: %v overflows %s", errs.DecodeInvalidInt, v, dst.Type())
+	}
+	dst.SetInt(v)
+	return nil
+}
+
+func setBoolValue(dst reflect.Value, raw any) error {
+	v, err := toBool(raw)
+	if err != nil {
+		return err
+	}
+	dst.SetBool(v)
+	return nil
+}
+
+func setFloatValue(dst reflect.Value, raw any) error {
+	v, err := toFloat64(raw)
+	if err != nil {
+		return err
+	}
+	if dst.OverflowFloat(v) {
+		return fmt.Errorf("%w: %v overflows %s", errs.DecodeInvalidFloat, v, dst.Type())
+	}
+	dst.SetFloat(v)
+	return nil
+}
+
+func setSliceValue(dst reflect.Value, raw any) error {
+	v, err := toSlice(dst.Type(), raw)
+	if err != nil {
+		return err
+	}
+	dst.Set(v)
+	return nil
 }
 
 func canDecodeWithTextUnmarshaler(v reflect.Value) bool {

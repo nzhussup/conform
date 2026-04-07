@@ -9,6 +9,47 @@ import (
 )
 
 func TestBuild(t *testing.T) {
+	tests := []struct {
+		name    string
+		target  any
+		errType error
+	}{
+		{
+			name:    "nil interface",
+			target:  nil,
+			errType: errs.InvalidTarget,
+		},
+		{
+			name:    "non-pointer target",
+			target:  struct{}{},
+			errType: errs.InvalidTarget,
+		},
+		{
+			name:    "nil pointer target",
+			target:  (*struct{})(nil),
+			errType: errs.InvalidTarget,
+		},
+		{
+			name:    "pointer to non-struct",
+			target:  new(int),
+			errType: errs.InvalidTarget,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s, err := Build(tt.target)
+			if s != nil {
+				t.Fatalf("Build() expected nil schema on error, got %#v", s)
+			}
+			if !errors.Is(err, tt.errType) {
+				t.Fatalf("Build() error = %v, want wrapped %v", err, tt.errType)
+			}
+		})
+	}
+}
+
+func TestBuildCollectsExportedAndNestedFields(t *testing.T) {
 	type nested struct {
 		Flag   bool   `env:"FLAG" required:"true"`
 		hidden string `env:"HIDDEN"`
@@ -21,115 +62,51 @@ func TestBuild(t *testing.T) {
 		unexported string `key:"skip"`
 	}
 
-	type args struct {
-		target any
+	s, err := Build(&config{})
+	if err != nil {
+		t.Fatalf("Build() error = %v, want nil", err)
+	}
+	if s == nil {
+		t.Fatalf("Build() got nil schema")
 	}
 
-	tests := []struct {
-		name        string
-		args        args
-		wantErr     bool
-		errType     error
-		validateOut func(t *testing.T, s *Schema)
-	}{
-		{
-			name:    "nil interface",
-			args:    args{target: nil},
-			wantErr: true,
-			errType: errs.InvalidTarget,
-		},
-		{
-			name:    "non-pointer target",
-			args:    args{target: struct{}{}},
-			wantErr: true,
-			errType: errs.InvalidTarget,
-		},
-		{
-			name:    "nil pointer target",
-			args:    args{target: (*struct{})(nil)},
-			wantErr: true,
-			errType: errs.InvalidTarget,
-		},
-		{
-			name:    "pointer to non-struct",
-			args:    args{target: new(int)},
-			wantErr: true,
-			errType: errs.InvalidTarget,
-		},
-		{
-			name:    "collects exported and nested fields",
-			args:    args{target: &config{}},
-			wantErr: false,
-			errType: nil,
-			validateOut: func(t *testing.T, s *Schema) {
-				t.Helper()
-
-				if got, want := len(s.Fields), 4; got != want {
-					t.Fatalf("Build() field count = %d, want %d", got, want)
-				}
-
-				f0 := s.Fields[0]
-				if f0.Path != "Name" {
-					t.Fatalf("field[0].Path = %q, want %q", f0.Path, "Name")
-				}
-				if f0.KeyName != "name" || f0.EnvName != "NAME" {
-					t.Fatalf("field[0] tags not parsed correctly: key=%q env=%q", f0.KeyName, f0.EnvName)
-				}
-				if !f0.HasDefaultValue || f0.DefaultValue != "app" {
-					t.Fatalf("field[0] default parsing incorrect: has=%v value=%q", f0.HasDefaultValue, f0.DefaultValue)
-				}
-				if !f0.Required {
-					t.Fatalf("field[0] required parsing incorrect")
-				}
-
-				f1 := s.Fields[1]
-				if f1.Path != "Count" {
-					t.Fatalf("field[1].Path = %q, want %q", f1.Path, "Count")
-				}
-
-				f2 := s.Fields[2]
-				if f2.Path != "Nested" {
-					t.Fatalf("field[2].Path = %q, want %q", f2.Path, "Nested")
-				}
-				if f2.Type.Kind() != reflect.Struct {
-					t.Fatalf("field[2].Type.Kind() = %v, want %v", f2.Type.Kind(), reflect.Struct)
-				}
-
-				f3 := s.Fields[3]
-				if f3.Path != "Nested.Flag" {
-					t.Fatalf("field[3].Path = %q, want %q", f3.Path, "Nested.Flag")
-				}
-				if f3.EnvName != "FLAG" || !f3.Required {
-					t.Fatalf("field[3] tags not parsed correctly: env=%q required=%v", f3.EnvName, f3.Required)
-				}
-			},
-		},
+	if got, want := len(s.Fields), 4; got != want {
+		t.Fatalf("Build() field count = %d, want %d", got, want)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s, err := Build(tt.args.target)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Build() error = %v, wantErr %v", err, tt.wantErr)
-			}
+	f0 := s.Fields[0]
+	if f0.Path != "Name" {
+		t.Fatalf("field[0].Path = %q, want %q", f0.Path, "Name")
+	}
+	if f0.KeyName != "name" || f0.EnvName != "NAME" {
+		t.Fatalf("field[0] tags not parsed correctly: key=%q env=%q", f0.KeyName, f0.EnvName)
+	}
+	if !f0.HasDefaultValue || f0.DefaultValue != "app" {
+		t.Fatalf("field[0] default parsing incorrect: has=%v value=%q", f0.HasDefaultValue, f0.DefaultValue)
+	}
+	if !f0.Required {
+		t.Fatalf("field[0] required parsing incorrect")
+	}
 
-			if tt.wantErr {
-				if s != nil {
-					t.Fatalf("Build() expected nil schema on error, got %#v", s)
-				}
-				if tt.errType != nil && !errors.Is(err, tt.errType) {
-					t.Fatalf("Build() error = %v, want wrapped %v", err, tt.errType)
-				}
-				return
-			}
+	f1 := s.Fields[1]
+	if f1.Path != "Count" {
+		t.Fatalf("field[1].Path = %q, want %q", f1.Path, "Count")
+	}
 
-			if s == nil {
-				t.Fatalf("Build() got nil schema")
-			}
-			if tt.validateOut != nil {
-				tt.validateOut(t, s)
-			}
-		})
+	f2 := s.Fields[2]
+	if f2.Path != "Nested" {
+		t.Fatalf("field[2].Path = %q, want %q", f2.Path, "Nested")
+	}
+	if f2.Type.Kind() != reflect.Struct {
+		t.Fatalf("field[2].Type.Kind() = %v, want %v", f2.Type.Kind(), reflect.Struct)
+	}
+
+	f3 := s.Fields[3]
+	if f3.Path != "Nested.Flag" {
+		t.Fatalf("field[3].Path = %q, want %q", f3.Path, "Nested.Flag")
+	}
+	if f3.EnvName != "FLAG" || !f3.Required {
+		t.Fatalf("field[3] tags not parsed correctly: env=%q required=%v", f3.EnvName, f3.Required)
 	}
 }
 
