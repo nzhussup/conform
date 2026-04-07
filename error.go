@@ -1,10 +1,10 @@
-package conform
+package konform
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/nzhussup/conform/internal/errs"
+	"github.com/nzhussup/konform/internal/errs"
 )
 
 var (

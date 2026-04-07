@@ -1,8 +1,8 @@
 package validate
 
 import (
-	"github.com/nzhussup/conform/internal/errs"
-	"github.com/nzhussup/conform/internal/schema"
+	"github.com/nzhussup/konform/internal/errs"
+	"github.com/nzhussup/konform/internal/schema"
 )
 
 func MissingRequired(sc *schema.Schema) ([]schema.Field, error) {

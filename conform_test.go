@@ -1,4 +1,4 @@
-package conform
+package konform
 
 import (
 	"errors"
@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nzhussup/conform/internal/decode"
-	internalschema "github.com/nzhussup/conform/internal/schema"
+	"github.com/nzhussup/konform/internal/decode"
+	internalschema "github.com/nzhussup/konform/internal/schema"
 )
 
 func TestLoad(t *testing.T) {

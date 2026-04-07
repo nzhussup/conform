@@ -1,4 +1,4 @@
-package conform
+package konform
 
 import (
 	"errors"
@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/nzhussup/conform/internal/errs"
-	"github.com/nzhussup/conform/internal/schema"
+	"github.com/nzhussup/konform/internal/errs"
+	"github.com/nzhussup/konform/internal/schema"
 )
 
 func TestFromEnv(t *testing.T) {

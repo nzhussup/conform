@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/nzhussup/conform/internal/errs"
+	"github.com/nzhussup/konform/internal/errs"
 )
 
 type Field struct {

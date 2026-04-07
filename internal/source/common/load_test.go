@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nzhussup/conform/internal/errs"
-	"github.com/nzhussup/conform/internal/schema"
+	"github.com/nzhussup/konform/internal/errs"
+	"github.com/nzhussup/konform/internal/schema"
 )
 
 func TestLoadFile(t *testing.T) {

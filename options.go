@@ -1,15 +1,15 @@
-package conform
+package konform
 
 import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/nzhussup/conform/internal/errs"
-	internalschema "github.com/nzhussup/conform/internal/schema"
-	envsource "github.com/nzhussup/conform/internal/source/env"
+	"github.com/nzhussup/konform/internal/errs"
+	internalschema "github.com/nzhussup/konform/internal/schema"
+	envsource "github.com/nzhussup/konform/internal/source/env"
 
-	jsonsource "github.com/nzhussup/conform/internal/source/json"
-	yamlsource "github.com/nzhussup/conform/internal/source/yaml"
+	jsonsource "github.com/nzhussup/konform/internal/source/json"
+	yamlsource "github.com/nzhussup/konform/internal/source/yaml"
 )
 
 type Option func(*loadOptions) error

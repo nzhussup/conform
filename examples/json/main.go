@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nzhussup/conform"
+	"github.com/nzhussup/konform"
 )
 
 // This example demonstrates JSON loading with strict typed decoding.
@@ -136,21 +136,21 @@ type Log struct {
 func main() {
 	var flatCfg ConfigFlat
 
-	if err := conform.Load(&flatCfg, conform.FromJSONFile("config.json")); err != nil {
+	if err := konform.Load(&flatCfg, konform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Flat config:\n%+v\n", flatCfg)
 
 	var inlineNestedCfg ConfigInlineNested
-	if err := conform.Load(&inlineNestedCfg, conform.FromJSONFile("config.json")); err != nil {
+	if err := konform.Load(&inlineNestedCfg, konform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Inline nested config:\n%+v\n", inlineNestedCfg)
 
 	var nestedCfg ConfigNested
-	if err := conform.Load(&nestedCfg, conform.FromJSONFile("config.json")); err != nil {
+	if err := konform.Load(&nestedCfg, konform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 

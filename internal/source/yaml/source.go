@@ -3,8 +3,8 @@ package yaml
 import (
 	"gopkg.in/yaml.v3"
 
-	"github.com/nzhussup/conform/internal/schema"
-	"github.com/nzhussup/conform/internal/source/common"
+	"github.com/nzhussup/konform/internal/schema"
+	"github.com/nzhussup/konform/internal/source/common"
 )
 
 type FileSource struct {

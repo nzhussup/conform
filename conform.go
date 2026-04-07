@@ -1,11 +1,11 @@
-package conform
+package konform
 
 import (
-	internaldefaults "github.com/nzhussup/conform/internal/defaults"
-	internalschema "github.com/nzhussup/conform/internal/schema"
-	internalvalidate "github.com/nzhussup/conform/internal/validate"
+	internaldefaults "github.com/nzhussup/konform/internal/defaults"
+	internalschema "github.com/nzhussup/konform/internal/schema"
+	internalvalidate "github.com/nzhussup/konform/internal/validate"
 
-	"github.com/nzhussup/conform/internal/errs"
+	"github.com/nzhussup/konform/internal/errs"
 )
 
 func Load(target any, opts ...Option) error {

@@ -3,9 +3,9 @@ package defaults
 import (
 	"fmt"
 
-	"github.com/nzhussup/conform/internal/decode"
-	"github.com/nzhussup/conform/internal/errs"
-	"github.com/nzhussup/conform/internal/schema"
+	"github.com/nzhussup/konform/internal/decode"
+	"github.com/nzhussup/konform/internal/errs"
+	"github.com/nzhussup/konform/internal/schema"
 )
 
 func Apply(sc *schema.Schema) error {

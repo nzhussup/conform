@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nzhussup/conform/internal/errs"
-	"github.com/nzhussup/conform/internal/schema"
+	"github.com/nzhussup/konform/internal/errs"
+	"github.com/nzhussup/konform/internal/schema"
 )
 
 func TestLoad(t *testing.T) {

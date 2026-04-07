@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nzhussup/conform"
+	"github.com/nzhussup/konform"
 )
 
 // This example demonstrates YAML loading with strict typed decoding:
@@ -133,21 +133,21 @@ type Log struct {
 func main() {
 	var flatCfg ConfigFlat
 
-	if err := conform.Load(&flatCfg, conform.FromYAMLFile("config.yaml")); err != nil {
+	if err := konform.Load(&flatCfg, konform.FromYAMLFile("config.yaml")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Flat config:\n%+v\n", flatCfg)
 
 	var inlineNestedCfg ConfigInlineNested
-	if err := conform.Load(&inlineNestedCfg, conform.FromYAMLFile("config.yaml")); err != nil {
+	if err := konform.Load(&inlineNestedCfg, konform.FromYAMLFile("config.yaml")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Inline nested config:\n%+v\n", inlineNestedCfg)
 
 	var nestedCfg ConfigNested
-	if err := conform.Load(&nestedCfg, conform.FromYAMLFile("config.yaml")); err != nil {
+	if err := konform.Load(&nestedCfg, konform.FromYAMLFile("config.yaml")); err != nil {
 		log.Fatal(err)
 	}
 

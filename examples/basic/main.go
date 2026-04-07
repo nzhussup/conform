@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/nzhussup/conform"
+	"github.com/nzhussup/konform"
 )
 
 // This example demonstrates source precedence:
@@ -32,10 +32,10 @@ type Config struct {
 func main() {
 	var cfg Config
 
-	err := conform.Load(&cfg,
-		conform.FromJSONFile("config.json"),
-		conform.FromYAMLFile("config.yaml"),
-		conform.FromEnv(),
+	err := konform.Load(&cfg,
+		konform.FromJSONFile("config.json"),
+		konform.FromYAMLFile("config.yaml"),
+		konform.FromEnv(),
 	)
 	if err != nil {
 		log.Fatal(err)

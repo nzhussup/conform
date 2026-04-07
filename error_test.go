@@ -1,11 +1,11 @@
-package conform
+package konform
 
 import (
 	"errors"
 	"strings"
 	"testing"
 
-	"github.com/nzhussup/conform/internal/errs"
+	"github.com/nzhussup/konform/internal/errs"
 )
 
 func TestFieldErrorError(t *testing.T) {

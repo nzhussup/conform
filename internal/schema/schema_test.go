@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/nzhussup/conform/internal/errs"
+	"github.com/nzhussup/konform/internal/errs"
 )
 
 func TestBuild(t *testing.T) {

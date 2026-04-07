@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nzhussup/conform"
+	"github.com/nzhussup/konform"
 )
 
 // This example focuses on environment-variable loading:
@@ -59,7 +59,7 @@ type Config struct {
 func main() {
 	var cfg Config
 
-	if err := conform.Load(&cfg, conform.FromEnv()); err != nil {
+	if err := konform.Load(&cfg, konform.FromEnv()); err != nil {
 		log.Fatal(err)
 	}
 

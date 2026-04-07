@@ -1,4 +1,4 @@
-module github.com/nzhussup/conform
+module github.com/nzhussup/konform
 
 go 1.24.1
 
