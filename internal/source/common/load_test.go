@@ -1,0 +1,514 @@
+package common
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+
+	"github.com/nzhussup/conform/internal/errs"
+	"github.com/nzhussup/conform/internal/schema"
+)
+
+func TestLoadFile(t *testing.T) {
+	makeStringField := func(path string, conf string, target *string) schema.Field {
+		return schema.Field{
+			Path:     path,
+			ConfName: conf,
+			Type:     reflect.TypeOf(""),
+			Value:    reflect.ValueOf(target).Elem(),
+		}
+	}
+	makeIntField := func(path string, conf string, target *int) schema.Field {
+		return schema.Field{
+			Path:     path,
+			ConfName: conf,
+			Type:     reflect.TypeOf(0),
+			Value:    reflect.ValueOf(target).Elem(),
+		}
+	}
+
+	type args struct {
+		sc        *schema.Schema
+		path      string
+		callerDir string
+		format    string
+		unmarshal UnmarshalFunc
+	}
+
+	tests := []struct {
+		name        string
+		args        args
+		setup       func(t *testing.T) args
+		wantErrType error
+		wantErrLike []string
+		validate    func(t *testing.T, a args)
+	}{
+		{
+			name: "nil schema",
+			args: args{
+				sc:        nil,
+				path:      "any.yaml",
+				callerDir: "",
+				format:    "yaml",
+				unmarshal: func(_ []byte) (Document, error) { return Document{}, nil },
+			},
+			wantErrType: errs.InvalidSchemaNil,
+		},
+		{
+			name: "read file error",
+			args: args{
+				sc:        &schema.Schema{},
+				path:      filepath.Join("does", "not", "exist.yaml"),
+				callerDir: "",
+				format:    "yaml",
+				unmarshal: func(_ []byte) (Document, error) { return Document{}, nil },
+			},
+			wantErrType: errs.DecodeSourceRead,
+			wantErrLike: []string{"yaml", "file"},
+		},
+		{
+			name: "parse error from unmarshal",
+			setup: func(t *testing.T) args {
+				t.Helper()
+				dir := t.TempDir()
+				p := filepath.Join(dir, "config.yaml")
+				if err := os.WriteFile(p, []byte("port: ???"), 0o600); err != nil {
+					t.Fatalf("WriteFile() error = %v", err)
+				}
+
+				return args{
+					sc:        &schema.Schema{},
+					path:      p,
+					callerDir: "",
+					format:    "yaml",
+					unmarshal: func(_ []byte) (Document, error) {
+						return nil, fmt.Errorf("boom parse")
+					},
+				}
+			},
+			wantErrType: errs.DecodeSourceParse,
+			wantErrLike: []string{"yaml", "boom parse"},
+		},
+		{
+			name: "apply error from decoded field",
+			setup: func(t *testing.T) args {
+				t.Helper()
+				dir := t.TempDir()
+				p := filepath.Join(dir, "config.yaml")
+				if err := os.WriteFile(p, []byte("name: true"), 0o600); err != nil {
+					t.Fatalf("WriteFile() error = %v", err)
+				}
+
+				var name string
+				sc := &schema.Schema{
+					Fields: []schema.Field{
+						makeStringField("Name", "name", &name),
+					},
+				}
+
+				return args{
+					sc:        sc,
+					path:      p,
+					callerDir: "",
+					format:    "yaml",
+					unmarshal: func(_ []byte) (Document, error) {
+						return Document{"name": true}, nil
+					},
+				}
+			},
+			wantErrType: errs.DecodeSourceField,
+			wantErrLike: []string{"yaml", "name", "Name", "expected string, got bool"},
+		},
+		{
+			name: "relative path resolved from caller dir",
+			setup: func(t *testing.T) args {
+				t.Helper()
+				dir := t.TempDir()
+				rel := "config.yaml"
+				p := filepath.Join(dir, rel)
+				if err := os.WriteFile(p, []byte("port: 8080"), 0o600); err != nil {
+					t.Fatalf("WriteFile() error = %v", err)
+				}
+
+				var port int
+				sc := &schema.Schema{
+					Fields: []schema.Field{
+						makeIntField("Port", "port", &port),
+					},
+				}
+
+				return args{
+					sc:        sc,
+					path:      rel,
+					callerDir: dir,
+					format:    "yaml",
+					unmarshal: func(_ []byte) (Document, error) {
+						return Document{"port": "8080"}, nil
+					},
+				}
+			},
+			validate: func(t *testing.T, a args) {
+				t.Helper()
+				port := a.sc.Fields[0].Value.Interface().(int)
+				if port != 8080 {
+					t.Fatalf("port = %d, want 8080", port)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := tt.args
+			if tt.setup != nil {
+				a = tt.setup(t)
+			}
+
+			err := LoadFile(a.sc, a.path, a.callerDir, a.format, a.unmarshal)
+			if tt.wantErrType == nil {
+				if err != nil {
+					t.Fatalf("LoadFile() error = %v, want nil", err)
+				}
+				if tt.validate != nil {
+					tt.validate(t, a)
+				}
+				return
+			}
+
+			if err == nil {
+				t.Fatalf("LoadFile() error = nil, want %v", tt.wantErrType)
+			}
+			if !errors.Is(err, tt.wantErrType) {
+				t.Fatalf("LoadFile() error = %v, want wrapped %v", err, tt.wantErrType)
+			}
+			for _, part := range tt.wantErrLike {
+				if !strings.Contains(err.Error(), part) {
+					t.Fatalf("LoadFile() error = %q, want to contain %q", err.Error(), part)
+				}
+			}
+		})
+	}
+}
+
+func TestApply(t *testing.T) {
+	type nested struct{}
+
+	tests := []struct {
+		name        string
+		scBuilder   func() *schema.Schema
+		doc         Document
+		wantErrType error
+		wantErrLike []string
+		validate    func(t *testing.T, sc *schema.Schema)
+	}{
+		{
+			name:        "nil schema",
+			scBuilder:   func() *schema.Schema { return nil },
+			doc:         Document{},
+			wantErrType: errs.InvalidSchemaNil,
+		},
+		{
+			name: "missing path is ignored",
+			scBuilder: func() *schema.Schema {
+				var port int
+				return &schema.Schema{
+					Fields: []schema.Field{
+						{
+							Path:     "Port",
+							ConfName: "port",
+							Type:     reflect.TypeOf(0),
+							Value:    reflect.ValueOf(&port).Elem(),
+						},
+					},
+				}
+			},
+			doc: Document{},
+			validate: func(t *testing.T, sc *schema.Schema) {
+				t.Helper()
+				if got := sc.Fields[0].Value.Interface().(int); got != 0 {
+					t.Fatalf("port = %d, want 0", got)
+				}
+			},
+		},
+		{
+			name: "decode error is wrapped with field context",
+			scBuilder: func() *schema.Schema {
+				var enabled string
+				return &schema.Schema{
+					Fields: []schema.Field{
+						{
+							Path:     "Enabled",
+							ConfName: "enabled",
+							Type:     reflect.TypeOf(""),
+							Value:    reflect.ValueOf(&enabled).Elem(),
+						},
+					},
+				}
+			},
+			doc:         Document{"enabled": true},
+			wantErrType: errs.DecodeSourceField,
+			wantErrLike: []string{"yaml", "enabled", "Enabled", "expected string, got bool"},
+		},
+		{
+			name: "nested field uses parent alias",
+			scBuilder: func() *schema.Schema {
+				var parent nested
+				var port int
+				return &schema.Schema{
+					Fields: []schema.Field{
+						{
+							Path:     "Server",
+							ConfName: "server_cfg",
+							Type:     reflect.TypeOf(parent),
+							Value:    reflect.ValueOf(&parent).Elem(),
+						},
+						{
+							Path:  "Server.Port",
+							Type:  reflect.TypeOf(0),
+							Value: reflect.ValueOf(&port).Elem(),
+						},
+					},
+				}
+			},
+			doc: Document{
+				"server_cfg": map[string]any{
+					"Port": "9090",
+				},
+			},
+			validate: func(t *testing.T, sc *schema.Schema) {
+				t.Helper()
+				if got := sc.Fields[1].Value.Interface().(int); got != 9090 {
+					t.Fatalf("port = %d, want 9090", got)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sc := tt.scBuilder()
+			err := Apply(sc, tt.doc, "yaml")
+
+			if tt.wantErrType == nil {
+				if err != nil {
+					t.Fatalf("Apply() error = %v, want nil", err)
+				}
+				if tt.validate != nil {
+					tt.validate(t, sc)
+				}
+				return
+			}
+
+			if err == nil {
+				t.Fatalf("Apply() error = nil, want %v", tt.wantErrType)
+			}
+			if !errors.Is(err, tt.wantErrType) {
+				t.Fatalf("Apply() error = %v, want wrapped %v", err, tt.wantErrType)
+			}
+			for _, part := range tt.wantErrLike {
+				if !strings.Contains(err.Error(), part) {
+					t.Fatalf("Apply() error = %q, want to contain %q", err.Error(), part)
+				}
+			}
+		})
+	}
+}
+
+func TestBuildPathAliases(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   *schema.Schema
+		want map[string]string
+	}{
+		{
+			name: "collects only fields with conf names",
+			sc: &schema.Schema{
+				Fields: []schema.Field{
+					{Path: "Server", ConfName: "server_cfg"},
+					{Path: "Server.Port", ConfName: ""},
+					{Path: "DB.Host", ConfName: "db_host"},
+				},
+			},
+			want: map[string]string{
+				"Server":  "server_cfg",
+				"DB.Host": "db_host",
+			},
+		},
+		{
+			name: "empty schema",
+			sc:   &schema.Schema{},
+			want: map[string]string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := BuildPathAliases(tt.sc)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("BuildPathAliases() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestResolveLookupPath(t *testing.T) {
+	tests := []struct {
+		name        string
+		field       schema.Field
+		pathAliases map[string]string
+		want        string
+	}{
+		{
+			name: "uses field conf name directly",
+			field: schema.Field{
+				Path:     "Server.Port",
+				ConfName: "server_port",
+			},
+			pathAliases: map[string]string{
+				"Server": "server_cfg",
+			},
+			want: "server_port",
+		},
+		{
+			name: "uses parent alias for nested field",
+			field: schema.Field{
+				Path: "Server.Port",
+			},
+			pathAliases: map[string]string{
+				"Server": "server_cfg",
+			},
+			want: "server_cfg.Port",
+		},
+		{
+			name: "prefers deepest alias when multiple match",
+			field: schema.Field{
+				Path: "Server.DB.Port",
+			},
+			pathAliases: map[string]string{
+				"Server":    "server_cfg",
+				"Server.DB": "db_cfg",
+			},
+			want: "db_cfg.Port",
+		},
+		{
+			name: "no alias returns original path",
+			field: schema.Field{
+				Path: "Server.Port",
+			},
+			pathAliases: map[string]string{},
+			want:        "Server.Port",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ResolveLookupPath(tt.field, tt.pathAliases)
+			if got != tt.want {
+				t.Fatalf("ResolveLookupPath() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetByPath(t *testing.T) {
+	tests := []struct {
+		name      string
+		doc       Document
+		path      string
+		want      any
+		wantFound bool
+	}{
+		{
+			name:      "empty path",
+			doc:       Document{"a": 1},
+			path:      "",
+			want:      nil,
+			wantFound: false,
+		},
+		{
+			name:      "top level key",
+			doc:       Document{"a": 1},
+			path:      "a",
+			want:      1,
+			wantFound: true,
+		},
+		{
+			name: "nested map string-any",
+			doc: Document{
+				"server": map[string]any{
+					"port": 8080,
+				},
+			},
+			path:      "server.port",
+			want:      8080,
+			wantFound: true,
+		},
+		{
+			name: "nested Document map",
+			doc: Document{
+				"server": Document{
+					"host": "localhost",
+				},
+			},
+			path:      "server.host",
+			want:      "localhost",
+			wantFound: true,
+		},
+		{
+			name: "nested map interface-any with string keys",
+			doc: Document{
+				"server": map[interface{}]interface{}{
+					"port": 9000,
+				},
+			},
+			path:      "server.port",
+			want:      9000,
+			wantFound: true,
+		},
+		{
+			name: "missing nested key",
+			doc: Document{
+				"server": map[string]any{},
+			},
+			path:      "server.port",
+			want:      nil,
+			wantFound: false,
+		},
+		{
+			name: "non-map encountered in middle",
+			doc: Document{
+				"server": "localhost",
+			},
+			path:      "server.port",
+			want:      nil,
+			wantFound: false,
+		},
+		{
+			name: "map interface-any with non-string key fails",
+			doc: Document{
+				"server": map[interface{}]interface{}{
+					1: "bad",
+				},
+			},
+			path:      "server.port",
+			want:      nil,
+			wantFound: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := GetByPath(tt.doc, tt.path)
+			if ok != tt.wantFound {
+				t.Fatalf("GetByPath() found = %v, want %v", ok, tt.wantFound)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("GetByPath() value = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}

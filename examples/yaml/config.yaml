@@ -1,0 +1,36 @@
+App:
+  Name: conform-service
+  Debug: true
+  StartupTimeout: 5s
+  AllowedOrigins:
+    - https://api.acme.dev
+    - https://admin.acme.dev
+  AdminPorts:
+    - "9001"
+    - 9002
+
+Database:
+  Port: "5432"
+  URI: postgres://user:password@localhost/mydb
+  PoolSize: 48
+  MaxLifetime: 45m
+
+cache:
+  Enabled: "true"
+  Port: 6379
+  URI: redis://localhost:6379/0
+
+Observability:
+  SamplingRatio: 0.35
+  RetryBackoff: 750ms
+  AlertWindows:
+    - 30s
+    - "2m"
+    - 300000000000
+
+Log:
+  Level: debug
+  Format: JSON
+  Outputs:
+    - json
+    - TEXT

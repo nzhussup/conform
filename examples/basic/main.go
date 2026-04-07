@@ -7,6 +7,8 @@ import (
 	"github.com/nzhussup/conform"
 )
 
+// This example demonstrates source precedence:
+// YAML is loaded first, then ENV overrides matching fields.
 type Config struct {
 	Server struct {
 		Port int    `default:"8080"`

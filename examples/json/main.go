@@ -9,7 +9,7 @@ import (
 	"github.com/nzhussup/conform"
 )
 
-// This example demonstrates YAML loading with strict typed decoding:
+// This example demonstrates JSON loading with strict typed decoding:
 // - nested keys and aliases (cache)
 // - defaults and required fields
 // - scalar coercion (string->int/bool/float/duration)
@@ -124,21 +124,21 @@ type Log struct {
 func main() {
 	var flatCfg ConfigFlat
 
-	if err := conform.Load(&flatCfg, conform.FromYAMLFile("config.yaml")); err != nil {
+	if err := conform.Load(&flatCfg, conform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Flat config:\n%+v\n", flatCfg)
 
 	var inlineNestedCfg ConfigInlineNested
-	if err := conform.Load(&inlineNestedCfg, conform.FromYAMLFile("config.yaml")); err != nil {
+	if err := conform.Load(&inlineNestedCfg, conform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Inline nested config:\n%+v\n", inlineNestedCfg)
 
 	var nestedCfg ConfigNested
-	if err := conform.Load(&nestedCfg, conform.FromYAMLFile("config.yaml")); err != nil {
+	if err := conform.Load(&nestedCfg, conform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 
