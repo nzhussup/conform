@@ -1,16 +1,17 @@
 package conform
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/nzhussup/conform/internal/errs"
 )
 
 var (
-	ErrInvalidTarget = errors.New("conform: invalid target")
-	ErrInvalidSchema = errors.New("conform: invalid schema")
-	ErrDecode        = errors.New("conform: decode error")
-	ErrValidation    = errors.New("conform: validation failed")
+	ErrInvalidTarget = errs.InvalidTarget
+	ErrInvalidSchema = errs.InvalidSchema
+	ErrDecode        = errs.Decode
+	ErrValidation    = errs.Validation
 )
 
 type FieldError struct {

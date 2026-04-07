@@ -1,23 +1,26 @@
 package conform
 
-import "fmt"
+import (
+	"github.com/nzhussup/conform/internal/errs"
+	internalschema "github.com/nzhussup/conform/internal/schema"
+)
 
-func validateRequired(sc *schema) error {
+func validateRequired(sc *internalschema.Schema) error {
 	if sc == nil {
-		return fmt.Errorf("%w: nil schema", ErrInvalidSchema)
+		return errs.InvalidSchemaNil
 	}
 
 	var missing []FieldError
 
-	for _, f := range sc.fields {
+	for _, f := range sc.Fields {
 		if !f.Required {
 			continue
 		}
 
-		if isZeroValue(f.Value) {
+		if internalschema.IsZeroValue(f.Value) {
 			missing = append(missing, FieldError{
 				Path: f.Path,
-				Err:  fmt.Errorf("%w: required", ErrValidation),
+				Err:  errs.ValidationRequired,
 			})
 		}
 	}

@@ -1,11 +1,13 @@
-package conform
+package schema
 
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/nzhussup/conform/internal/errs"
 )
 
-type field struct {
+type Field struct {
 	GoName          string
 	Path            string
 	ConfName        string
@@ -17,29 +19,33 @@ type field struct {
 	Value           reflect.Value
 }
 
-type schema struct {
-	fields []field
+type Schema struct {
+	Fields []Field
 }
 
-func buildSchema(target any) (*schema, error) {
+func Build(target any) (*Schema, error) {
 	v := reflect.ValueOf(target)
 	if !v.IsValid() || v.Kind() != reflect.Pointer || v.IsNil() {
-		return nil, fmt.Errorf("%w: target must be a non-nil pointer to a struct", ErrInvalidTarget)
+		return nil, fmt.Errorf("%w: target must be a non-nil pointer to a struct", errs.InvalidTarget)
 	}
 
 	v = v.Elem()
 	if v.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("%w: target must point to a struct", ErrInvalidTarget)
+		return nil, fmt.Errorf("%w: target must point to a struct", errs.InvalidTarget)
 	}
 
-	s := &schema{}
-	if err := collectFields(v, v.Type(), "", &s.fields); err != nil {
+	s := &Schema{}
+	if err := collectFields(v, v.Type(), "", &s.Fields); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[]field) error {
+func IsZeroValue(v reflect.Value) bool {
+	return v.IsZero()
+}
+
+func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[]Field) error {
 	for i := 0; i < t.NumField(); i++ {
 		structField := t.Field(i)
 		fieldValue := v.Field(i)
@@ -53,20 +59,17 @@ func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[
 			path = parentPath + "." + structField.Name
 		}
 
-		confName := structField.Tag.Get("conf")
-		envName := structField.Tag.Get("env")
 		defaultValue := structField.Tag.Get("default")
 		hasDefaultValue := defaultValue != ""
-		required := structField.Tag.Get("required") == "true"
 
-		*fields = append(*fields, field{
+		*fields = append(*fields, Field{
 			GoName:          structField.Name,
 			Path:            path,
-			ConfName:        confName,
-			EnvName:         envName,
+			ConfName:        structField.Tag.Get("conf"),
+			EnvName:         structField.Tag.Get("env"),
 			DefaultValue:    defaultValue,
 			HasDefaultValue: hasDefaultValue,
-			Required:        required,
+			Required:        structField.Tag.Get("required") == "true",
 			Type:            structField.Type,
 			Value:           fieldValue,
 		})
@@ -78,8 +81,4 @@ func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[
 		}
 	}
 	return nil
-}
-
-func isZeroValue(v reflect.Value) bool {
-	return v.IsZero()
 }

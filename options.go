@@ -1,24 +1,28 @@
 package conform
 
-import "fmt"
+import (
+	"github.com/nzhussup/conform/internal/errs"
+	internalschema "github.com/nzhussup/conform/internal/schema"
+	envsource "github.com/nzhussup/conform/internal/source/env"
+
+	yamlsource "github.com/nzhussup/conform/internal/source/yaml"
+)
 
 type Option func(*loadOptions) error
 
-type source interface {
-	load(*schema) error
-}
+type sourceLoader func(*internalschema.Schema) error
 
 type loadOptions struct {
-	sources []source
+	sources []sourceLoader
 }
 
 func FromEnv() Option {
 	return func(o *loadOptions) error {
 		if o == nil {
-			return fmt.Errorf("%w: nil load options", ErrInvalidSchema)
+			return errs.InvalidSchemaNilOptions
 		}
 
-		o.sources = append(o.sources, envSource{})
+		o.sources = append(o.sources, envsource.Load)
 		return nil
 	}
 }
@@ -26,16 +30,15 @@ func FromEnv() Option {
 func FromYAMLFile(path string) Option {
 	return func(o *loadOptions) error {
 		if o == nil {
-			return fmt.Errorf("%w: nil load options", ErrInvalidSchema)
+			return errs.InvalidSchemaNilOptions
 		}
 
 		if path == "" {
-			return fmt.Errorf("%w: yaml path must not be empty", ErrInvalidSchema)
+			return errs.InvalidSchemaEmptyYAML
 		}
 
-		o.sources = append(o.sources, yamlFileSource{
-			path: path,
-		})
+		source := yamlsource.NewFileSource(path)
+		o.sources = append(o.sources, source.Load)
 		return nil
 	}
 }

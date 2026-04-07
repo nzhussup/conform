@@ -1,5 +1,10 @@
 package conform
 
+import (
+	internaldefaults "github.com/nzhussup/conform/internal/defaults"
+	internalschema "github.com/nzhussup/conform/internal/schema"
+)
+
 func Load(target any, opts ...Option) error {
 	loadOpts := loadOptions{}
 
@@ -9,17 +14,17 @@ func Load(target any, opts ...Option) error {
 		}
 	}
 
-	sc, err := buildSchema(target)
+	sc, err := internalschema.Build(target)
 	if err != nil {
 		return err
 	}
 
-	if err := applyDefaults(sc); err != nil {
+	if err := internaldefaults.Apply(sc); err != nil {
 		return err
 	}
 
 	for _, src := range loadOpts.sources {
-		if err := src.load(sc); err != nil {
+		if err := src(sc); err != nil {
 			return err
 		}
 	}
