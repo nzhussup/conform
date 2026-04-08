@@ -47,7 +47,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changelog changes"
           else
-            git commit -m "docs: update changelog for ${{ github.ref_name }} [skip ci]"
+            git commit -m "docs: update changelog for ${{ github.ref_name }} [skip ci] [skip codeql]"
             git push "https://x-access-token:${{ secrets.RELEASE_PUSH_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:main
           fi
 
