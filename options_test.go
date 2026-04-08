@@ -108,6 +108,13 @@ func TestFileOptions(t *testing.T) {
 			wantErrType: errs.InvalidSchemaEmptyJSON,
 		},
 		{
+			name:        "toml empty path",
+			option:      FromTOMLFile,
+			ext:         ".toml",
+			path:        "",
+			wantErrType: errs.InvalidSchemaEmptyTOML,
+		},
+		{
 			name:    "yaml registers source and loads absolute path",
 			option:  FromYAMLFile,
 			ext:     ".yaml",
@@ -140,6 +147,24 @@ func TestFileOptions(t *testing.T) {
 				}
 				if got := sc.Fields[0].Value.Interface().(int); got != 8082 {
 					t.Fatalf("Port = %d, want 8082", got)
+				}
+			},
+		},
+		{
+			name:    "toml registers source and loads absolute path",
+			option:  FromTOMLFile,
+			ext:     ".toml",
+			content: "port = \"8083\"\n",
+			validate: func(t *testing.T, o *loadOptions, sc *schema.Schema) {
+				t.Helper()
+				if got := len(o.sources); got != 1 {
+					t.Fatalf("len(sources) = %d, want 1", got)
+				}
+				if err := o.sources[0](sc); err != nil {
+					t.Fatalf("source() error = %v, want nil", err)
+				}
+				if got := sc.Fields[0].Value.Interface().(int); got != 8083 {
+					t.Fatalf("Port = %d, want 8083", got)
 				}
 			},
 		},
