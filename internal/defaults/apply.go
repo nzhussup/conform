@@ -13,19 +13,21 @@ func Apply(sc *schema.Schema) error {
 		return errs.InvalidSchemaNil
 	}
 
-	for _, f := range sc.Fields {
-		if !f.HasDefaultValue() {
+	for i := range sc.Fields {
+		field := sc.Fields[i]
+		if !field.HasDefaultValue() {
 			continue
 		}
 
-		if !schema.IsZeroValue(f.Value) {
+		if !schema.IsZeroValue(field.Value) {
 			continue
 		}
 
-		if err := decode.SetFieldValue(f, f.DefaultValue); err != nil {
-			ctx := fmt.Sprintf("invalid default for %s", f.Path)
+		if err := decode.SetFieldValue(field, field.DefaultValue); err != nil {
+			ctx := fmt.Sprintf("invalid default for %s", field.Path)
 			return errs.WrapDecode(errs.Decode, ctx, err)
 		}
+		sc.Fields[i].Source = "default"
 	}
 
 	return nil

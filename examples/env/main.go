@@ -59,7 +59,7 @@ type Config struct {
 func main() {
 	var cfg Config
 
-	if err := konform.Load(&cfg, konform.FromEnv()); err != nil {
+	if _, err := konform.Load(&cfg, konform.FromEnv()); err != nil {
 		log.Fatal(err)
 	}
 

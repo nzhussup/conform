@@ -94,6 +94,7 @@ func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[
 			KeyName:      structField.Tag.Get("key"),
 			EnvName:      structField.Tag.Get("env"),
 			DefaultValue: defaultValue,
+			IsSecret:     parseSecretTag(structField.Tag.Get("secret")),
 			Validations:  validations,
 			Type:         structField.Type,
 			Value:        fieldValue,
@@ -106,4 +107,13 @@ func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[
 		}
 	}
 	return nil
+}
+
+func parseSecretTag(tag string) bool {
+	switch strings.ToLower(strings.TrimSpace(tag)) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }

@@ -428,7 +428,7 @@ func TestApply(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sc := tt.scBuilder()
-			err := ApplyWithMode(sc, tt.doc, "yaml", tt.mode)
+			err := ApplyWithMode(sc, tt.doc, "yaml", tt.mode, "config.yaml")
 
 			if tt.wantErrType == nil {
 				if err != nil {

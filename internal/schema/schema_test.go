@@ -88,6 +88,9 @@ func TestBuildCollectsExportedAndNestedFields(t *testing.T) {
 	if !f0.HasValidation("required") {
 		t.Fatalf("field[0] required validation parsing incorrect")
 	}
+	if f0.IsSecret {
+		t.Fatalf("field[0].IsSecret = true, want false")
+	}
 
 	f1 := s.Fields[1]
 	if f1.Path != "Count" {
@@ -108,6 +111,29 @@ func TestBuildCollectsExportedAndNestedFields(t *testing.T) {
 	}
 	if f3.EnvName != "FLAG" || !f3.HasValidation("required") {
 		t.Fatalf("field[3] tags not parsed correctly: env=%q required=%v", f3.EnvName, f3.HasValidation("required"))
+	}
+}
+
+func TestBuildParsesSecretTag(t *testing.T) {
+	type config struct {
+		APIKey  string `secret:"true"`
+		APIKey2 string `secret:"1"`
+		Public  string `secret:"false"`
+	}
+
+	s, err := Build(&config{})
+	if err != nil {
+		t.Fatalf("Build() error = %v, want nil", err)
+	}
+
+	if got := s.Fields[0].IsSecret; !got {
+		t.Fatalf("field[0].IsSecret = %v, want true", got)
+	}
+	if got := s.Fields[1].IsSecret; !got {
+		t.Fatalf("field[1].IsSecret = %v, want true", got)
+	}
+	if got := s.Fields[2].IsSecret; got {
+		t.Fatalf("field[2].IsSecret = %v, want false", got)
 	}
 }
 

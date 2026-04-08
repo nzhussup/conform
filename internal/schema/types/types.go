@@ -11,9 +11,11 @@ type Field struct {
 	KeyName      string
 	EnvName      string
 	DefaultValue string
+	IsSecret     bool
 	Validations  map[string]string
 	Type         reflect.Type
 	Value        reflect.Value
+	Source       string
 }
 
 func (f Field) HasDefaultValue() bool {

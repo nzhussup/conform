@@ -6,38 +6,38 @@ import (
 	internalvalidate "github.com/nzhussup/konform/internal/validate"
 )
 
-func Load(target any, opts ...Option) error {
+func Load(target any, opts ...Option) (*LoadReport, error) {
 	loadOpts := loadOptions{}
 
 	for _, opt := range opts {
 		if err := opt(&loadOpts); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	sc, err := internalschema.Build(target)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if loadOpts.strict {
 		if err := internalschema.ValidateStrictMappings(sc); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := internaldefaults.Apply(sc); err != nil {
-		return err
+		return buildReport(sc), err
 	}
 
 	for _, src := range loadOpts.sources {
 		if err := src(sc); err != nil {
-			return err
+			return buildReport(sc), err
 		}
 	}
 
 	validations, err := internalvalidate.Validate(sc)
 	if err != nil {
-		return err
+		return buildReport(sc), err
 	}
 	if len(validations) > 0 {
 		fieldErrors := make([]FieldError, 0, len(validations))
@@ -48,8 +48,8 @@ func Load(target any, opts ...Option) error {
 			})
 		}
 
-		return &ValidationError{Fields: fieldErrors}
+		return buildReport(sc), &ValidationError{Fields: fieldErrors}
 	}
 
-	return nil
+	return buildReport(sc), nil
 }

@@ -136,21 +136,21 @@ type Log struct {
 func main() {
 	var flatCfg ConfigFlat
 
-	if err := konform.Load(&flatCfg, konform.FromJSONFile("config.json")); err != nil {
+	if _, err := konform.Load(&flatCfg, konform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Flat config:\n%+v\n", flatCfg)
 
 	var inlineNestedCfg ConfigInlineNested
-	if err := konform.Load(&inlineNestedCfg, konform.FromJSONFile("config.json")); err != nil {
+	if _, err := konform.Load(&inlineNestedCfg, konform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Inline nested config:\n%+v\n", inlineNestedCfg)
 
 	var nestedCfg ConfigNested
-	if err := konform.Load(&nestedCfg, konform.FromJSONFile("config.json")); err != nil {
+	if _, err := konform.Load(&nestedCfg, konform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 

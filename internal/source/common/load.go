@@ -38,7 +38,12 @@ func LoadFileWithMode(sc *schema.Schema, path string, callerDir string, format s
 		return errs.WrapDecode(errs.DecodeSourceParse, fmt.Sprintf("%s file", format), err)
 	}
 
-	return ApplyWithMode(sc, doc, format, suggestionMode)
+	sourceLabel := path
+	if sourceLabel == "" {
+		sourceLabel = format
+	}
+
+	return ApplyWithMode(sc, doc, format, suggestionMode, sourceLabel)
 }
 
 func resolvePath(path string, callerDir string) string {
@@ -49,10 +54,10 @@ func resolvePath(path string, callerDir string) string {
 }
 
 func Apply(sc *schema.Schema, doc Document, format string) error {
-	return ApplyWithMode(sc, doc, format, UnknownKeySuggestionWarn)
+	return ApplyWithMode(sc, doc, format, UnknownKeySuggestionWarn, format)
 }
 
-func ApplyWithMode(sc *schema.Schema, doc Document, format string, suggestionMode UnknownKeySuggestionMode) error {
+func ApplyWithMode(sc *schema.Schema, doc Document, format string, suggestionMode UnknownKeySuggestionMode, sourceLabel string) error {
 	if sc == nil {
 		return errs.InvalidSchemaNil
 	}
@@ -73,7 +78,8 @@ func ApplyWithMode(sc *schema.Schema, doc Document, format string, suggestionMod
 		fieldErrors = append(fieldErrors, errs.WrapDecode(errs.DecodeSourceField, format, errors.New(msg)))
 	}
 
-	for _, field := range sc.Fields {
+	for i := range sc.Fields {
+		field := sc.Fields[i]
 		if isStructField(field) {
 			continue
 		}
@@ -87,7 +93,9 @@ func ApplyWithMode(sc *schema.Schema, doc Document, format string, suggestionMod
 		if err := setFieldFromValue(field, value); err != nil {
 			ctx := fmt.Sprintf("%s %q -> %s", format, lookupPath, field.Path)
 			fieldErrors = append(fieldErrors, errs.WrapDecode(errs.DecodeSourceField, ctx, err))
+			continue
 		}
+		sc.Fields[i].Source = sourceLabel
 	}
 
 	if len(fieldErrors) > 0 {

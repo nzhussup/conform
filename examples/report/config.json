@@ -1,0 +1,11 @@
+{
+    "Database": {
+        "Host": "localhost",
+        "Port": 5432,
+        "Password": "mysecretpassword"
+    },
+    "application": {
+        "name": "MyApp",
+        "version": "1.0.0"
+    }
+}

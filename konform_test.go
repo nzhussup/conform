@@ -31,7 +31,7 @@ func optionWithSource(loader sourceLoader) Option {
 
 func TestLoadInvalidTarget(t *testing.T) {
 	var target loadTestConfig
-	err := Load(target)
+	_, err := Load(target)
 	if !errors.Is(err, ErrInvalidTarget) {
 		t.Fatalf("Load() error = %v, want wrapped %v", err, ErrInvalidTarget)
 	}
@@ -39,7 +39,7 @@ func TestLoadInvalidTarget(t *testing.T) {
 
 func TestLoadOptionError(t *testing.T) {
 	cfg := &loadTestConfig{}
-	err := Load(cfg, func(_ *loadOptions) error { return fmt.Errorf("option failed") })
+	_, err := Load(cfg, func(_ *loadOptions) error { return fmt.Errorf("option failed") })
 	if err == nil || !strings.Contains(err.Error(), "option failed") {
 		t.Fatalf("Load() error = %v, want to contain %q", err, "option failed")
 	}
@@ -47,7 +47,7 @@ func TestLoadOptionError(t *testing.T) {
 
 func TestLoadSourceError(t *testing.T) {
 	cfg := &loadTestConfig{}
-	err := Load(cfg, optionWithSource(func(_ *internalschema.Schema) error {
+	_, err := Load(cfg, optionWithSource(func(_ *internalschema.Schema) error {
 		return fmt.Errorf("source failed")
 	}))
 	if err == nil || !strings.Contains(err.Error(), "source failed") {
@@ -57,7 +57,7 @@ func TestLoadSourceError(t *testing.T) {
 
 func TestLoadValidationErrorForMissingRequired(t *testing.T) {
 	cfg := &loadTestConfig{}
-	err := Load(cfg)
+	_, err := Load(cfg)
 
 	if !errors.Is(err, ErrValidation) {
 		t.Fatalf("Load() error = %v, want wrapped %v", err, ErrValidation)
@@ -74,7 +74,7 @@ func TestLoadValidationErrorForMissingRequired(t *testing.T) {
 
 func TestLoadSuccessWithDefaultThenSourceOverride(t *testing.T) {
 	cfg := &loadTestConfig{}
-	err := Load(cfg, optionWithSource(func(sc *internalschema.Schema) error {
+	_, err := Load(cfg, optionWithSource(func(sc *internalschema.Schema) error {
 		for _, f := range sc.Fields {
 			if f.Path == "Name" {
 				if err := decode.SetFieldValue(f, "svc"); err != nil {
@@ -106,7 +106,7 @@ func TestLoadSuccessWithEnvSource(t *testing.T) {
 	t.Setenv("PORT", "7777")
 
 	cfg := &loadTestConfig{}
-	err := Load(cfg, FromEnv())
+	_, err := Load(cfg, FromEnv())
 	if err != nil {
 		t.Fatalf("Load() error = %v, want nil", err)
 	}
@@ -133,7 +133,7 @@ func TestLoadReportsMultipleDecodeErrorsFromFile(t *testing.T) {
 	}
 
 	cfg := &config{}
-	err := Load(cfg, FromJSONFile(path))
+	_, err := Load(cfg, FromJSONFile(path))
 	if err == nil {
 		t.Fatalf("Load() error = nil, want decode errors")
 	}
@@ -171,7 +171,7 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 	t.Run("default mode warns and falls through to validation", func(t *testing.T) {
 		cfg := &config{}
 		stderr := captureStderr(t, func() {
-			err := Load(cfg, FromJSONFile(path))
+			_, err := Load(cfg, FromJSONFile(path))
 			if err == nil {
 				t.Fatalf("Load() error = nil, want validation error")
 			}
@@ -189,7 +189,7 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 
 	t.Run("error mode reports unexpected input key with schema suggestion", func(t *testing.T) {
 		cfg := &config{}
-		err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(Error))
+		_, err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(Error))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want decode error")
 		}
@@ -207,7 +207,7 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 	t.Run("off mode ignores unknown keys and falls through to validation", func(t *testing.T) {
 		cfg := &config{}
 		stderr := captureStderr(t, func() {
-			err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(Off))
+			_, err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(Off))
 			if err == nil {
 				t.Fatalf("Load() error = nil, want validation error")
 			}
@@ -222,7 +222,7 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 
 	t.Run("off mode works even when option is set before source", func(t *testing.T) {
 		cfg := &config{}
-		err := Load(cfg, WithUnknownKeySuggestionMode(Off), FromJSONFile(path))
+		_, err := Load(cfg, WithUnknownKeySuggestionMode(Off), FromJSONFile(path))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want validation error")
 		}
@@ -233,7 +233,7 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 
 	t.Run("strict mode reports unknown file key as decode error", func(t *testing.T) {
 		cfg := &config{}
-		err := Load(cfg, Strict(), FromJSONFile(path))
+		_, err := Load(cfg, Strict(), FromJSONFile(path))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want decode error")
 		}
@@ -285,7 +285,7 @@ func TestLoadStrictMode(t *testing.T) {
 		}
 
 		cfg := &config{}
-		if err := Load(cfg, Strict(), FromJSONFile(path)); err != nil {
+		if _, err := Load(cfg, Strict(), FromJSONFile(path)); err != nil {
 			t.Fatalf("Load() error = %v, want nil", err)
 		}
 		if cfg.License != "" {
@@ -305,7 +305,7 @@ func TestLoadStrictMode(t *testing.T) {
 		}
 
 		cfg := &config{}
-		err := Load(cfg, Strict(), FromJSONFile(path))
+		_, err := Load(cfg, Strict(), FromJSONFile(path))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want validation error")
 		}
@@ -328,7 +328,7 @@ func TestLoadStrictMode(t *testing.T) {
 		}
 
 		cfg := &config{}
-		err := Load(cfg, Strict(), FromJSONFile(path))
+		_, err := Load(cfg, Strict(), FromJSONFile(path))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want decode error")
 		}
@@ -350,7 +350,7 @@ func TestLoadStrictMode(t *testing.T) {
 		}
 
 		cfg := &config{}
-		err := Load(cfg, Strict())
+		_, err := Load(cfg, Strict())
 		if err == nil {
 			t.Fatalf("Load() error = nil, want invalid schema error")
 		}
@@ -369,7 +369,7 @@ func TestLoadStrictMode(t *testing.T) {
 		}
 
 		cfg := &config{}
-		err := Load(cfg, Strict())
+		_, err := Load(cfg, Strict())
 		if err == nil {
 			t.Fatalf("Load() error = nil, want invalid schema error")
 		}
@@ -388,7 +388,7 @@ func TestLoadStrictMode(t *testing.T) {
 
 		t.Setenv("PORT", "bad-int")
 		cfg := &config{}
-		err := Load(cfg, Strict(), FromEnv())
+		_, err := Load(cfg, Strict(), FromEnv())
 		if err == nil {
 			t.Fatalf("Load() error = nil, want decode error")
 		}
@@ -409,7 +409,7 @@ func TestLoadStrictMode(t *testing.T) {
 		t.Setenv("UNRELATED_KEY", "ignored")
 
 		cfg := &config{}
-		err := Load(cfg, Strict(), FromEnv())
+		_, err := Load(cfg, Strict(), FromEnv())
 		if err != nil {
 			t.Fatalf("Load() error = %v, want nil", err)
 		}
@@ -430,7 +430,7 @@ func TestLoadStrictMode(t *testing.T) {
 		}
 
 		cfg := &config{}
-		err := Load(cfg, Strict(), FromJSONFile(path))
+		_, err := Load(cfg, Strict(), FromJSONFile(path))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want decode error")
 		}

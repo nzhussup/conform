@@ -31,7 +31,7 @@ type Config struct {
 func main() {
 	cfg := Config{}
 
-	if err := konform.Load(&cfg, konform.FromJSONFile("config.json")); err != nil {
+	if _, err := konform.Load(&cfg, konform.FromJSONFile("config.json")); err != nil {
 		log.Fatal(err)
 	}
 

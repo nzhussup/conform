@@ -32,7 +32,7 @@ type Config struct {
 func main() {
 	var cfg Config
 
-	err := konform.Load(&cfg,
+	_, err := konform.Load(&cfg,
 		konform.FromJSONFile("config.json"),
 		konform.FromYAMLFile("config.yaml"),
 		konform.FromEnv(),

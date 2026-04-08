@@ -133,21 +133,21 @@ type Log struct {
 func main() {
 	var flatCfg ConfigFlat
 
-	if err := konform.Load(&flatCfg, konform.FromYAMLFile("config.yaml")); err != nil {
+	if _, err := konform.Load(&flatCfg, konform.FromYAMLFile("config.yaml")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Flat config:\n%+v\n", flatCfg)
 
 	var inlineNestedCfg ConfigInlineNested
-	if err := konform.Load(&inlineNestedCfg, konform.FromYAMLFile("config.yaml")); err != nil {
+	if _, err := konform.Load(&inlineNestedCfg, konform.FromYAMLFile("config.yaml")); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Inline nested config:\n%+v\n", inlineNestedCfg)
 
 	var nestedCfg ConfigNested
-	if err := konform.Load(&nestedCfg, konform.FromYAMLFile("config.yaml")); err != nil {
+	if _, err := konform.Load(&nestedCfg, konform.FromYAMLFile("config.yaml")); err != nil {
 		log.Fatal(err)
 	}
 

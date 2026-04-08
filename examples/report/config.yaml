@@ -1,0 +1,6 @@
+database:
+  host: "db.example.com"
+  port: 5432
+Application:
+  name: "MyApp"
+  version: "1.0.0"
