@@ -254,6 +254,32 @@ func TestApply(t *testing.T) {
 			wantErrLike: []string{"yaml", "enabled", "Enabled", "expected string, got bool"},
 		},
 		{
+			name: "collects multiple decode errors",
+			scBuilder: func() *schema.Schema {
+				var name string
+				var port int
+				return &schema.Schema{
+					Fields: []schema.Field{
+						{
+							Path:    "Name",
+							KeyName: "name",
+							Type:    reflect.TypeOf(""),
+							Value:   reflect.ValueOf(&name).Elem(),
+						},
+						{
+							Path:    "Port",
+							KeyName: "port",
+							Type:    reflect.TypeOf(0),
+							Value:   reflect.ValueOf(&port).Elem(),
+						},
+					},
+				}
+			},
+			doc:         Document{"name": true, "port": "not-int"},
+			wantErrType: errs.DecodeSourceField,
+			wantErrLike: []string{"yaml \"name\" -> Name", "expected string, got bool", "yaml \"port\" -> Port", "invalid int value"},
+		},
+		{
 			name: "nested field uses parent alias",
 			scBuilder: func() *schema.Schema {
 				var parent nested

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -49,6 +50,7 @@ func Apply(sc *schema.Schema, doc Document, format string) error {
 	}
 
 	pathAliases := BuildPathAliases(sc)
+	fieldErrors := make([]error, 0)
 
 	for _, field := range sc.Fields {
 		if isStructField(field) {
@@ -63,8 +65,12 @@ func Apply(sc *schema.Schema, doc Document, format string) error {
 
 		if err := setFieldFromValue(field, value); err != nil {
 			ctx := fmt.Sprintf("%s %q -> %s", format, lookupPath, field.Path)
-			return errs.WrapDecode(errs.DecodeSourceField, ctx, err)
+			fieldErrors = append(fieldErrors, errs.WrapDecode(errs.DecodeSourceField, ctx, err))
 		}
+	}
+
+	if len(fieldErrors) > 0 {
+		return errors.Join(fieldErrors...)
 	}
 
 	return nil

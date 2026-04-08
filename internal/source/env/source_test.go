@@ -134,6 +134,41 @@ func TestLoad(t *testing.T) {
 			wantErrType: errs.Decode,
 			wantErrLike: []string{`env "` + envDebug + `" -> Debug`, "invalid bool value"},
 		},
+		{
+			name: "collects multiple env decode errors",
+			setup: func(t *testing.T) setupOut {
+				t.Helper()
+				t.Setenv(envPort, "not-int")
+				t.Setenv(envDebug, "not-bool")
+
+				port := 0
+				debug := false
+				sc := &schema.Schema{
+					Fields: []schema.Field{
+						{
+							Path:    "Port",
+							EnvName: envPort,
+							Type:    reflect.TypeOf(0),
+							Value:   reflect.ValueOf(&port).Elem(),
+						},
+						{
+							Path:    "Debug",
+							EnvName: envDebug,
+							Type:    reflect.TypeOf(true),
+							Value:   reflect.ValueOf(&debug).Elem(),
+						},
+					},
+				}
+				return setupOut{sc: sc, portPtr: &port, debugPtr: &debug}
+			},
+			wantErrType: errs.Decode,
+			wantErrLike: []string{
+				`env "` + envPort + `" -> Port`,
+				"invalid int value",
+				`env "` + envDebug + `" -> Debug`,
+				"invalid bool value",
+			},
+		},
 	}
 
 	for _, tt := range tests {

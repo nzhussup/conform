@@ -3,6 +3,8 @@ package konform
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -111,5 +113,43 @@ func TestLoadSuccessWithEnvSource(t *testing.T) {
 	}
 	if cfg.Port != 7777 {
 		t.Fatalf("Port = %d, want %d", cfg.Port, 7777)
+	}
+}
+
+func TestLoadReportsMultipleDecodeErrorsFromFile(t *testing.T) {
+	type config struct {
+		Name  string `key:"name"`
+		Port  int    `key:"port"`
+		Debug bool   `key:"debug"`
+	}
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+	content := `{"name":true,"port":"not-int","debug":"not-bool"}`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	cfg := &config{}
+	err := Load(cfg, FromJSONFile(path))
+	if err == nil {
+		t.Fatalf("Load() error = nil, want decode errors")
+	}
+	if !errors.Is(err, ErrDecode) {
+		t.Fatalf("Load() error = %v, want wrapped %v", err, ErrDecode)
+	}
+
+	wantParts := []string{
+		`json "name" -> Name`,
+		"expected string, got bool",
+		`json "port" -> Port`,
+		"invalid int value",
+		`json "debug" -> Debug`,
+		"invalid bool value",
+	}
+	for _, part := range wantParts {
+		if !strings.Contains(err.Error(), part) {
+			t.Fatalf("Load() error = %q, want to contain %q", err.Error(), part)
+		}
 	}
 }
