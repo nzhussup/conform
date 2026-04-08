@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.1.3 - 2026-04-07
+
+
+
+### Fixes
+
+- Update release yml
+
+
+## v0.1.2 - 2026-04-07
+
+
+
+### Documentation
+
+- Update changelog for v0.1.1 [skip ci]
+
+- Update codeowners and release documentation
+
+- Add templates
+
+
+### Fixes
+
+- Fix gocyclo issues
+
+
 ## v0.1.1 - 2026-04-07
 
 
