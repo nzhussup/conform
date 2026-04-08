@@ -55,7 +55,7 @@ type Config struct {
 		Port int    `key:"server.port" default:"8080" env:"PORT"`
 	}
 	Database struct {
-		URL string `key:"database.url" env:"DATABASE_URL" required:"true"`
+		URL string `key:"database.url" env:"DATABASE_URL" validate:"required"`
 	}
 }
 
@@ -91,7 +91,7 @@ If multiple sources set the same field, the later source wins.
 - `key`: path used for YAML/JSON lookup (defaults to struct field path when omitted)
 - `env`: environment variable name
 - `default`: default value used when the field is zero-valued before source loading
-- `required:"true"`: marks a field as required after all sources are applied
+- `validate`: validation rules after all sources are applied (currently supported: `validate:"required"`)
 
 Note: this release uses `key` for file mapping. `conf` is not currently a supported tag.
 

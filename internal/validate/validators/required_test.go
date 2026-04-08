@@ -11,22 +11,22 @@ import (
 )
 
 func TestRequired(t *testing.T) {
-	makeStringField := func(name string, required bool, target *string) schema.Field {
+	makeStringField := func(name string, rules map[string]string, target *string) schema.Field {
 		return schema.Field{
-			GoName:   name,
-			Path:     name,
-			Required: required,
-			Type:     reflect.TypeOf(""),
-			Value:    reflect.ValueOf(target).Elem(),
+			GoName:      name,
+			Path:        name,
+			Validations: rules,
+			Type:        reflect.TypeOf(""),
+			Value:       reflect.ValueOf(target).Elem(),
 		}
 	}
-	makeIntField := func(name string, required bool, target *int) schema.Field {
+	makeIntField := func(name string, rules map[string]string, target *int) schema.Field {
 		return schema.Field{
-			GoName:   name,
-			Path:     name,
-			Required: required,
-			Type:     reflect.TypeOf(0),
-			Value:    reflect.ValueOf(target).Elem(),
+			GoName:      name,
+			Path:        name,
+			Validations: rules,
+			Type:        reflect.TypeOf(0),
+			Value:       reflect.ValueOf(target).Elem(),
 		}
 	}
 
@@ -40,7 +40,7 @@ func TestRequired(t *testing.T) {
 	}{
 		{
 			name:      "optional field is ignored even when zero",
-			field:     makeStringField("Name", false, new(string)),
+			field:     makeStringField("Name", nil, new(string)),
 			initial:   nil,
 			wantAdded: false,
 			wantTotal: 0,
@@ -49,7 +49,7 @@ func TestRequired(t *testing.T) {
 			name: "required field with non-zero value has no validation error",
 			field: func() schema.Field {
 				v := "konform"
-				return makeStringField("Name", true, &v)
+				return makeStringField("Name", map[string]string{"required": ""}, &v)
 			}(),
 			initial:   nil,
 			wantAdded: false,
@@ -57,7 +57,7 @@ func TestRequired(t *testing.T) {
 		},
 		{
 			name:        "required zero string adds required validation result",
-			field:       makeStringField("Name", true, new(string)),
+			field:       makeStringField("Name", map[string]string{"required": ""}, new(string)),
 			initial:     nil,
 			wantAdded:   true,
 			wantTotal:   1,
@@ -65,7 +65,7 @@ func TestRequired(t *testing.T) {
 		},
 		{
 			name:        "required zero int adds required validation result",
-			field:       makeIntField("Port", true, new(int)),
+			field:       makeIntField("Port", map[string]string{"required": ""}, new(int)),
 			initial:     nil,
 			wantAdded:   true,
 			wantTotal:   1,
@@ -73,7 +73,7 @@ func TestRequired(t *testing.T) {
 		},
 		{
 			name:  "required failure appends after existing validations",
-			field: makeStringField("Name", true, new(string)),
+			field: makeStringField("Name", map[string]string{"required": ""}, new(string)),
 			initial: []model.ValidationResult{
 				{Err: errors.New("existing")},
 			},

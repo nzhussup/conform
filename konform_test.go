@@ -13,7 +13,7 @@ import (
 )
 
 type loadTestConfig struct {
-	Name string `env:"NAME" required:"true"`
+	Name string `env:"NAME" validate:"required"`
 	Port int    `default:"8080" env:"PORT"`
 }
 

@@ -38,18 +38,18 @@ func (f *LogFormat) UnmarshalText(text []byte) error {
 
 type ConfigFlat struct {
 	// Flat mapping into nested YAML paths.
-	AppName             string          `key:"App.Name" required:"true"`
+	AppName             string          `key:"App.Name" validate:"required"`
 	AppDebug            bool            `key:"App.Debug"`
 	StartupTimeout      time.Duration   `key:"App.StartupTimeout" default:"10s"`
 	AppAllowedOrigins   []string        `key:"App.AllowedOrigins"`
 	AppAdminPorts       []int           `key:"App.AdminPorts"`
-	DatabasePort        int             `key:"Database.Port" required:"true"`
-	DatabaseURI         string          `key:"Database.URI" required:"true"`
+	DatabasePort        int             `key:"Database.Port" validate:"required"`
+	DatabaseURI         string          `key:"Database.URI" validate:"required"`
 	DatabasePoolSize    int             `key:"Database.PoolSize" default:"20"`
 	DatabaseMaxLifetime time.Duration   `key:"Database.MaxLifetime" default:"30m"`
 	CacheEnabled        bool            `key:"cache.Enabled" default:"true"`
-	CachePort           int             `key:"cache.Port" required:"true"`
-	CacheURI            string          `key:"cache.URI" required:"true"`
+	CachePort           int             `key:"cache.Port" validate:"required"`
+	CacheURI            string          `key:"cache.URI" validate:"required"`
 	SamplingRatio       float64         `key:"Observability.SamplingRatio" default:"0.1"`
 	RetryBackoff        time.Duration   `key:"Observability.RetryBackoff" default:"250ms"`
 	AlertWindows        []time.Duration `key:"Observability.AlertWindows"`
@@ -76,7 +76,7 @@ type ConfigInlineNested struct {
 		Enabled bool
 		Port    int
 		URI     string
-	} `key:"cache" required:"true"`
+	} `key:"cache" validate:"required"`
 	Observability struct {
 		SamplingRatio float64
 		RetryBackoff  time.Duration
@@ -92,7 +92,7 @@ type ConfigInlineNested struct {
 type ConfigNested struct {
 	App      App
 	Database Database
-	Cache    Cache `key:"cache" required:"true"`
+	Cache    Cache `key:"cache" validate:"required"`
 	Log      Log
 	Obs      Observability `key:"Observability"`
 }

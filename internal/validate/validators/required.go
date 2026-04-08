@@ -7,7 +7,7 @@ import (
 )
 
 func Required(f schema.Field, validations *[]model.ValidationResult) {
-	if !f.Required {
+	if !f.HasValidation("required") {
 		return
 	}
 	if schema.IsZeroValue(f.Value) {

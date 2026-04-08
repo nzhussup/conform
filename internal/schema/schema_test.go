@@ -3,6 +3,7 @@ package schema
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/nzhussup/konform/internal/errs"
@@ -51,12 +52,12 @@ func TestBuild(t *testing.T) {
 
 func TestBuildCollectsExportedAndNestedFields(t *testing.T) {
 	type nested struct {
-		Flag   bool   `env:"FLAG" required:"true"`
+		Flag   bool   `env:"FLAG" validate:"required"`
 		hidden string `env:"HIDDEN"`
 	}
 
 	type config struct {
-		Name       string `key:"name" env:"NAME" default:"app" required:"true"`
+		Name       string `key:"name" env:"NAME" default:"app" validate:"required"`
 		Count      int
 		Nested     nested `key:"nested"`
 		unexported string `key:"skip"`
@@ -81,11 +82,11 @@ func TestBuildCollectsExportedAndNestedFields(t *testing.T) {
 	if f0.KeyName != "name" || f0.EnvName != "NAME" {
 		t.Fatalf("field[0] tags not parsed correctly: key=%q env=%q", f0.KeyName, f0.EnvName)
 	}
-	if !f0.HasDefaultValue || f0.DefaultValue != "app" {
-		t.Fatalf("field[0] default parsing incorrect: has=%v value=%q", f0.HasDefaultValue, f0.DefaultValue)
+	if !f0.HasDefaultValue() || f0.DefaultValue != "app" {
+		t.Fatalf("field[0] default parsing incorrect: has=%v value=%q", f0.HasDefaultValue(), f0.DefaultValue)
 	}
-	if !f0.Required {
-		t.Fatalf("field[0] required parsing incorrect")
+	if !f0.HasValidation("required") {
+		t.Fatalf("field[0] required validation parsing incorrect")
 	}
 
 	f1 := s.Fields[1]
@@ -105,8 +106,25 @@ func TestBuildCollectsExportedAndNestedFields(t *testing.T) {
 	if f3.Path != "Nested.Flag" {
 		t.Fatalf("field[3].Path = %q, want %q", f3.Path, "Nested.Flag")
 	}
-	if f3.EnvName != "FLAG" || !f3.Required {
-		t.Fatalf("field[3] tags not parsed correctly: env=%q required=%v", f3.EnvName, f3.Required)
+	if f3.EnvName != "FLAG" || !f3.HasValidation("required") {
+		t.Fatalf("field[3] tags not parsed correctly: env=%q required=%v", f3.EnvName, f3.HasValidation("required"))
+	}
+}
+
+func TestBuildReturnsInvalidSchemaForUnsupportedValidateRule(t *testing.T) {
+	type config struct {
+		Age int `validate:"min=10"`
+	}
+
+	_, err := Build(&config{})
+	if err == nil {
+		t.Fatalf("Build() error = nil, want invalid schema error")
+	}
+	if !errors.Is(err, errs.InvalidSchema) {
+		t.Fatalf("Build() error = %v, want wrapped %v", err, errs.InvalidSchema)
+	}
+	if !strings.Contains(err.Error(), "unsupported validate rule \"min\"") {
+		t.Fatalf("Build() error = %q, want unsupported min rule message", err.Error())
 	}
 }
 

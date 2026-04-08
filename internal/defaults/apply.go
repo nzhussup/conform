@@ -14,7 +14,7 @@ func Apply(sc *schema.Schema) error {
 	}
 
 	for _, f := range sc.Fields {
-		if !f.HasDefaultValue {
+		if !f.HasDefaultValue() {
 			continue
 		}
 

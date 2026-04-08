@@ -53,7 +53,7 @@ type Config struct {
 	// string -> custom TextUnmarshaler
 	LogFormat LogFormat `env:"LOG_FORMAT" default:"json"`
 	// required field
-	DatabaseURL string `env:"DATABASE_URL" required:"true"`
+	DatabaseURL string `env:"DATABASE_URL" validate:"required"`
 }
 
 func main() {

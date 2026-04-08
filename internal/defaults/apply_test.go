@@ -63,18 +63,16 @@ func TestApply(t *testing.T) {
 				sc: &schema.Schema{
 					Fields: []schema.Field{
 						{
-							GoName:          "field1",
-							Type:            reflect.TypeOf(""),
-							Value:           reflect.ValueOf(new(string)).Elem(),
-							DefaultValue:    "default1",
-							HasDefaultValue: true,
+							GoName:       "field1",
+							Type:         reflect.TypeOf(""),
+							Value:        reflect.ValueOf(new(string)).Elem(),
+							DefaultValue: "default1",
 						},
 						{
-							GoName:          "field2",
-							Type:            reflect.TypeOf(0),
-							Value:           reflect.ValueOf(new(int)).Elem(),
-							DefaultValue:    "42",
-							HasDefaultValue: true,
+							GoName:       "field2",
+							Type:         reflect.TypeOf(0),
+							Value:        reflect.ValueOf(new(int)).Elem(),
+							DefaultValue: "42",
 						},
 					},
 				},
@@ -88,18 +86,16 @@ func TestApply(t *testing.T) {
 				sc: &schema.Schema{
 					Fields: []schema.Field{
 						{
-							GoName:          "field1",
-							Type:            reflect.TypeOf(""),
-							Value:           reflect.ValueOf(new(string)).Elem(),
-							DefaultValue:    "default1",
-							HasDefaultValue: true,
+							GoName:       "field1",
+							Type:         reflect.TypeOf(""),
+							Value:        reflect.ValueOf(new(string)).Elem(),
+							DefaultValue: "default1",
 						},
 						{
-							GoName:          "field2",
-							Type:            reflect.TypeOf(0),
-							Value:           reflect.ValueOf(new(int)).Elem(),
-							DefaultValue:    "not-an-int",
-							HasDefaultValue: true,
+							GoName:       "field2",
+							Type:         reflect.TypeOf(0),
+							Value:        reflect.ValueOf(new(int)).Elem(),
+							DefaultValue: "not-an-int",
 						},
 					},
 				},

@@ -10,22 +10,22 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	makeStringField := func(name string, required bool, target *string) schema.Field {
+	makeStringField := func(name string, rules map[string]string, target *string) schema.Field {
 		return schema.Field{
-			GoName:   name,
-			Path:     name,
-			Required: required,
-			Type:     reflect.TypeOf(""),
-			Value:    reflect.ValueOf(target).Elem(),
+			GoName:      name,
+			Path:        name,
+			Validations: rules,
+			Type:        reflect.TypeOf(""),
+			Value:       reflect.ValueOf(target).Elem(),
 		}
 	}
-	makeIntField := func(name string, required bool, target *int) schema.Field {
+	makeIntField := func(name string, rules map[string]string, target *int) schema.Field {
 		return schema.Field{
-			GoName:   name,
-			Path:     name,
-			Required: required,
-			Type:     reflect.TypeOf(0),
-			Value:    reflect.ValueOf(target).Elem(),
+			GoName:      name,
+			Path:        name,
+			Validations: rules,
+			Type:        reflect.TypeOf(0),
+			Value:       reflect.ValueOf(target).Elem(),
 		}
 	}
 
@@ -54,8 +54,8 @@ func TestValidate(t *testing.T) {
 			schemaBuilder: func() *schema.Schema {
 				return &schema.Schema{
 					Fields: []schema.Field{
-						makeStringField("Name", false, new(string)),
-						makeIntField("Port", false, new(int)),
+						makeStringField("Name", nil, new(string)),
+						makeIntField("Port", nil, new(int)),
 					},
 				}
 			},
@@ -66,8 +66,8 @@ func TestValidate(t *testing.T) {
 			schemaBuilder: func() *schema.Schema {
 				return &schema.Schema{
 					Fields: []schema.Field{
-						makeStringField("Name", true, new(string)),
-						makeIntField("Port", true, new(int)),
+						makeStringField("Name", map[string]string{"required": ""}, new(string)),
+						makeIntField("Port", map[string]string{"required": ""}, new(int)),
 					},
 				}
 			},
@@ -80,9 +80,9 @@ func TestValidate(t *testing.T) {
 				nonZeroName := "configured"
 				return &schema.Schema{
 					Fields: []schema.Field{
-						makeStringField("Name", true, &nonZeroName),
-						makeIntField("Port", true, new(int)),
-						makeStringField("Env", false, new(string)),
+						makeStringField("Name", map[string]string{"required": ""}, &nonZeroName),
+						makeIntField("Port", map[string]string{"required": ""}, new(int)),
+						makeStringField("Env", nil, new(string)),
 					},
 				}
 			},
