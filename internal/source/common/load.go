@@ -18,7 +18,7 @@ type Document map[string]any
 type UnmarshalFunc func([]byte) (Document, error)
 
 func LoadFile(sc *schema.Schema, path string, callerDir string, format string, unmarshal UnmarshalFunc) error {
-	return LoadFileWithMode(sc, path, callerDir, format, unmarshal, UnknownKeySuggestionError)
+	return LoadFileWithMode(sc, path, callerDir, format, unmarshal, UnknownKeySuggestionWarn)
 }
 
 func LoadFileWithMode(sc *schema.Schema, path string, callerDir string, format string, unmarshal UnmarshalFunc, suggestionMode UnknownKeySuggestionMode) error {
@@ -49,7 +49,7 @@ func resolvePath(path string, callerDir string) string {
 }
 
 func Apply(sc *schema.Schema, doc Document, format string) error {
-	return ApplyWithMode(sc, doc, format, UnknownKeySuggestionError)
+	return ApplyWithMode(sc, doc, format, UnknownKeySuggestionWarn)
 }
 
 func ApplyWithMode(sc *schema.Schema, doc Document, format string, suggestionMode UnknownKeySuggestionMode) error {
@@ -60,14 +60,17 @@ func ApplyWithMode(sc *schema.Schema, doc Document, format string, suggestionMod
 	pathAliases := BuildPathAliases(sc)
 	fieldErrors := make([]error, 0, len(sc.Fields))
 
-	if suggestionMode == UnknownKeySuggestionError {
-		for _, issue := range FindUnknownKeyIssues(sc, doc, pathAliases) {
-			msg := fmt.Sprintf(`unknown key %q`, issue.Path)
-			if issue.Suggestion != "" {
-				msg = fmt.Sprintf(`%s (did you mean %q?)`, msg, issue.Suggestion)
-			}
-			fieldErrors = append(fieldErrors, errs.WrapDecode(errs.DecodeSourceField, format, errors.New(msg)))
+	unknownKeyIssues := FindUnknownKeyIssuesWithMode(sc, doc, pathAliases, suggestionMode)
+	for _, issue := range unknownKeyIssues {
+		msg := fmt.Sprintf(`unknown configuration key %q`, issue.Path)
+		if issue.Suggestion != "" {
+			msg = fmt.Sprintf(`%s (did you mean %q?)`, msg, issue.Suggestion)
 		}
+		if suggestionMode == UnknownKeySuggestionWarn {
+			fmt.Fprintf(os.Stderr, "konform: warning: %s: %s\n", format, msg)
+			continue
+		}
+		fieldErrors = append(fieldErrors, errs.WrapDecode(errs.DecodeSourceField, format, errors.New(msg)))
 	}
 
 	for _, field := range sc.Fields {

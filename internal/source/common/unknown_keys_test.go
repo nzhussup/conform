@@ -37,7 +37,7 @@ func TestFindUnknownKeyIssues(t *testing.T) {
 		}
 	})
 
-	t.Run("missing expected path with suggestion", func(t *testing.T) {
+	t.Run("unexpected input path with suggestion", func(t *testing.T) {
 		sc := makeSchema()
 		aliases := BuildPathAliases(sc)
 		doc := Document{
@@ -50,11 +50,11 @@ func TestFindUnknownKeyIssues(t *testing.T) {
 		if len(got) != 1 {
 			t.Fatalf("len(issues) = %d, want 1", len(got))
 		}
-		if got[0].Path != "server_cfg.Port" {
-			t.Fatalf("issue path = %q, want %q", got[0].Path, "server_cfg.Port")
+		if got[0].Path != "server_cfg.Porrt" {
+			t.Fatalf("issue path = %q, want %q", got[0].Path, "server_cfg.Porrt")
 		}
-		if got[0].Suggestion != "server_cfg.Porrt" {
-			t.Fatalf("issue suggestion = %q, want %q", got[0].Suggestion, "server_cfg.Porrt")
+		if got[0].Suggestion != "server_cfg.Port" {
+			t.Fatalf("issue suggestion = %q, want %q", got[0].Suggestion, "server_cfg.Port")
 		}
 	})
 
@@ -70,6 +70,55 @@ func TestFindUnknownKeyIssues(t *testing.T) {
 		got := FindUnknownKeyIssues(sc, doc, aliases)
 		if len(got) != 0 {
 			t.Fatalf("len(issues) = %d, want 0", len(got))
+		}
+	})
+}
+
+func TestFindUnknownKeyIssuesWithMode(t *testing.T) {
+	var appName string
+	sc := &schema.Schema{
+		Fields: []schema.Field{
+			{
+				Path:  "AppName",
+				Type:  reflect.TypeOf(""),
+				Value: reflect.ValueOf(&appName).Elem(),
+			},
+		},
+	}
+	aliases := BuildPathAliases(sc)
+	doc := Document{
+		"App": map[string]any{
+			"Name": "konform",
+		},
+	}
+
+	t.Run("error mode reports unexpected key with schema suggestion", func(t *testing.T) {
+		issues := FindUnknownKeyIssuesWithMode(sc, doc, aliases, UnknownKeySuggestionError)
+		if len(issues) != 1 {
+			t.Fatalf("len(issues) = %d, want 1", len(issues))
+		}
+		if issues[0].Path != "App.Name" || issues[0].Suggestion != "AppName" {
+			t.Fatalf("issue = %#v, want path App.Name with suggestion AppName", issues[0])
+		}
+	})
+
+	t.Run("off mode reports no issues", func(t *testing.T) {
+		issues := FindUnknownKeyIssuesWithMode(sc, doc, aliases, UnknownKeySuggestionOff)
+		if len(issues) != 0 {
+			t.Fatalf("len(issues) = %d, want 0", len(issues))
+		}
+	})
+
+	t.Run("warn mode reports unknown actual file key", func(t *testing.T) {
+		issues := FindUnknownKeyIssuesWithMode(sc, doc, aliases, UnknownKeySuggestionWarn)
+		if len(issues) != 1 {
+			t.Fatalf("len(issues) = %d, want 1", len(issues))
+		}
+		if issues[0].Path != "App.Name" {
+			t.Fatalf("issue path = %q, want %q", issues[0].Path, "App.Name")
+		}
+		if issues[0].Suggestion != "AppName" {
+			t.Fatalf("issue suggestion = %q, want %q", issues[0].Suggestion, "AppName")
 		}
 	})
 }

@@ -21,13 +21,15 @@ type sourceLoader func(*internalschema.Schema) error
 type loadOptions struct {
 	sources               []sourceLoader
 	unknownKeySuggestMode common.UnknownKeySuggestionMode
+	strict                bool
 }
 
 type UnknownKeySuggestionMode = common.UnknownKeySuggestionMode
 
 const (
-	UnknownKeySuggestionError UnknownKeySuggestionMode = common.UnknownKeySuggestionError
-	UnknownKeySuggestionOff   UnknownKeySuggestionMode = common.UnknownKeySuggestionOff
+	Warn  UnknownKeySuggestionMode = common.UnknownKeySuggestionWarn
+	Error UnknownKeySuggestionMode = common.UnknownKeySuggestionError
+	Off   UnknownKeySuggestionMode = common.UnknownKeySuggestionOff
 )
 
 type fileSourceFactory func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode) sourceLoader
@@ -78,7 +80,11 @@ func fromFile(path string, emptyPathErr error, factory fileSourceFactory) Option
 		}
 
 		o.sources = append(o.sources, func(sc *internalschema.Schema) error {
-			load := factory(path, callerDir, o.unknownKeySuggestMode)
+			mode := o.unknownKeySuggestMode
+			if o.strict {
+				mode = common.UnknownKeySuggestionError
+			}
+			load := factory(path, callerDir, mode)
 			return load(sc)
 		})
 		return nil
@@ -96,8 +102,15 @@ func WithUnknownKeySuggestionMode(mode UnknownKeySuggestionMode) Option {
 	}
 }
 
-func WithoutUnknownKeySuggestions() Option {
-	return WithUnknownKeySuggestionMode(UnknownKeySuggestionOff)
+func Strict() Option {
+	return func(o *loadOptions) error {
+		if o == nil {
+			return errs.InvalidSchemaNilOptions
+		}
+
+		o.strict = true
+		return nil
+	}
 }
 
 func callerDirectory(skip int) string {

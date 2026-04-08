@@ -201,6 +201,7 @@ func TestApply(t *testing.T) {
 		name        string
 		scBuilder   func() *schema.Schema
 		doc         Document
+		mode        UnknownKeySuggestionMode
 		wantErrType error
 		wantErrLike []string
 		validate    func(t *testing.T, sc *schema.Schema)
@@ -209,6 +210,7 @@ func TestApply(t *testing.T) {
 			name:        "nil schema",
 			scBuilder:   func() *schema.Schema { return nil },
 			doc:         Document{},
+			mode:        UnknownKeySuggestionOff,
 			wantErrType: errs.InvalidSchemaNil,
 		},
 		{
@@ -226,7 +228,8 @@ func TestApply(t *testing.T) {
 					},
 				}
 			},
-			doc: Document{},
+			mode: UnknownKeySuggestionOff,
+			doc:  Document{},
 			validate: func(t *testing.T, sc *schema.Schema) {
 				t.Helper()
 				if got := sc.Fields[0].Value.Interface().(int); got != 0 {
@@ -249,6 +252,7 @@ func TestApply(t *testing.T) {
 					},
 				}
 			},
+			mode:        UnknownKeySuggestionOff,
 			doc:         Document{"enabled": true},
 			wantErrType: errs.DecodeSourceField,
 			wantErrLike: []string{"yaml", "enabled", "Enabled", "expected string, got bool"},
@@ -275,6 +279,7 @@ func TestApply(t *testing.T) {
 					},
 				}
 			},
+			mode:        UnknownKeySuggestionOff,
 			doc:         Document{"name": true, "port": "not-int"},
 			wantErrType: errs.DecodeSourceField,
 			wantErrLike: []string{"yaml \"name\" -> Name", "expected string, got bool", "yaml \"port\" -> Port", "invalid int value"},
@@ -300,6 +305,7 @@ func TestApply(t *testing.T) {
 					},
 				}
 			},
+			mode: UnknownKeySuggestionOff,
 			doc: Document{
 				"server_cfg": map[string]any{
 					"Port": "9090",
@@ -313,7 +319,7 @@ func TestApply(t *testing.T) {
 			},
 		},
 		{
-			name: "explicit key typo reports missing expected key with suggestion",
+			name: "explicit key typo reports unexpected config key with schema suggestion",
 			scBuilder: func() *schema.Schema {
 				var port int
 				return &schema.Schema{
@@ -327,16 +333,17 @@ func TestApply(t *testing.T) {
 					},
 				}
 			},
+			mode: UnknownKeySuggestionError,
 			doc: Document{
 				"App": map[string]any{
 					"Name": 8080,
 				},
 			},
 			wantErrType: errs.DecodeSourceField,
-			wantErrLike: []string{`unknown key "App.Nam"`, `did you mean "App.Name"?`},
+			wantErrLike: []string{`unknown configuration key "App.Name"`, `did you mean "App.Nam"?`},
 		},
 		{
-			name: "non explicit path typo reports missing expected key with suggestion",
+			name: "non explicit path typo reports unexpected config key with schema suggestion",
 			scBuilder: func() *schema.Schema {
 				type server struct{ Port int }
 				var s server
@@ -356,16 +363,17 @@ func TestApply(t *testing.T) {
 					},
 				}
 			},
+			mode: UnknownKeySuggestionError,
 			doc: Document{
 				"Server": map[string]any{
 					"Porrt": 8080,
 				},
 			},
 			wantErrType: errs.DecodeSourceField,
-			wantErrLike: []string{`unknown key "Server.Port"`, `did you mean "Server.Porrt"?`},
+			wantErrLike: []string{`unknown configuration key "Server.Porrt"`, `did you mean "Server.Port"?`},
 		},
 		{
-			name: "struct field path missing suggests dotted key from file",
+			name: "unexpected dotted key suggests struct key",
 			scBuilder: func() *schema.Schema {
 				var appName string
 				return &schema.Schema{
@@ -378,16 +386,17 @@ func TestApply(t *testing.T) {
 					},
 				}
 			},
+			mode: UnknownKeySuggestionError,
 			doc: Document{
 				"App": map[string]any{
 					"Name": "konform",
 				},
 			},
 			wantErrType: errs.DecodeSourceField,
-			wantErrLike: []string{`unknown key "AppName"`, `did you mean "App.Name"?`},
+			wantErrLike: []string{`unknown configuration key "App.Name"`, `did you mean "AppName"?`},
 		},
 		{
-			name: "extra file keys are ignored when struct key is present",
+			name: "extra file keys are ignored in non-strict mode",
 			scBuilder: func() *schema.Schema {
 				var appDebug bool
 				return &schema.Schema{
@@ -400,6 +409,7 @@ func TestApply(t *testing.T) {
 					},
 				}
 			},
+			mode: UnknownKeySuggestionOff,
 			doc: Document{
 				"AppDebug": true,
 				"App": map[string]any{
@@ -418,7 +428,7 @@ func TestApply(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sc := tt.scBuilder()
-			err := Apply(sc, tt.doc, "yaml")
+			err := ApplyWithMode(sc, tt.doc, "yaml", tt.mode)
 
 			if tt.wantErrType == nil {
 				if err != nil {

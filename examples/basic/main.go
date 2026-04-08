@@ -36,6 +36,7 @@ func main() {
 		konform.FromJSONFile("config.json"),
 		konform.FromYAMLFile("config.yaml"),
 		konform.FromEnv(),
+		konform.Strict(),
 	)
 	if err != nil {
 		log.Fatal(err)

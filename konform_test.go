@@ -1,8 +1,10 @@
 package konform
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -166,16 +168,35 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
 
-	t.Run("default mode returns decode error with suggestion", func(t *testing.T) {
+	t.Run("default mode warns and falls through to validation", func(t *testing.T) {
 		cfg := &config{}
-		err := Load(cfg, FromJSONFile(path))
+		stderr := captureStderr(t, func() {
+			err := Load(cfg, FromJSONFile(path))
+			if err == nil {
+				t.Fatalf("Load() error = nil, want validation error")
+			}
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("Load() error = %v, want wrapped %v", err, ErrValidation)
+			}
+			if !strings.Contains(err.Error(), "AppName: required") {
+				t.Fatalf("Load() error = %q, want required validation for AppName", err.Error())
+			}
+		})
+		if !strings.Contains(stderr, `warning: json: unknown configuration key "App.Name"`) {
+			t.Fatalf("stderr = %q, want warning message", stderr)
+		}
+	})
+
+	t.Run("error mode reports unexpected input key with schema suggestion", func(t *testing.T) {
+		cfg := &config{}
+		err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(Error))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want decode error")
 		}
 		if !errors.Is(err, ErrDecode) {
 			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrDecode)
 		}
-		wantParts := []string{`unknown key "AppName"`, `did you mean "App.Name"?`}
+		wantParts := []string{`unknown configuration key "App.Name"`, `did you mean "AppName"?`}
 		for _, part := range wantParts {
 			if !strings.Contains(err.Error(), part) {
 				t.Fatalf("Load() error = %q, want to contain %q", err.Error(), part)
@@ -183,31 +204,241 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 		}
 	})
 
-	t.Run("off mode ignores suggestion and falls through to validation", func(t *testing.T) {
+	t.Run("off mode ignores unknown keys and falls through to validation", func(t *testing.T) {
 		cfg := &config{}
-		err := Load(cfg, FromJSONFile(path), WithoutUnknownKeySuggestions())
-		if err == nil {
-			t.Fatalf("Load() error = nil, want validation error")
-		}
-		if !errors.Is(err, ErrValidation) {
-			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrValidation)
-		}
-		if strings.Contains(err.Error(), "unknown key") {
-			t.Fatalf("Load() error = %q, want no unknown-key decode error", err.Error())
-		}
-		if !strings.Contains(err.Error(), "AppName: required") {
-			t.Fatalf("Load() error = %q, want required validation for AppName", err.Error())
+		stderr := captureStderr(t, func() {
+			err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(Off))
+			if err == nil {
+				t.Fatalf("Load() error = nil, want validation error")
+			}
+			if !errors.Is(err, ErrValidation) {
+				t.Fatalf("Load() error = %v, want wrapped %v", err, ErrValidation)
+			}
+		})
+		if strings.Contains(stderr, "unknown configuration key") {
+			t.Fatalf("stderr = %q, want no unknown-key warnings", stderr)
 		}
 	})
 
 	t.Run("off mode works even when option is set before source", func(t *testing.T) {
 		cfg := &config{}
-		err := Load(cfg, WithoutUnknownKeySuggestions(), FromJSONFile(path))
+		err := Load(cfg, WithUnknownKeySuggestionMode(Off), FromJSONFile(path))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want validation error")
 		}
 		if !errors.Is(err, ErrValidation) {
 			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrValidation)
+		}
+	})
+
+	t.Run("strict mode reports unknown file key as decode error", func(t *testing.T) {
+		cfg := &config{}
+		err := Load(cfg, Strict(), FromJSONFile(path))
+		if err == nil {
+			t.Fatalf("Load() error = nil, want decode error")
+		}
+		if !errors.Is(err, ErrDecode) {
+			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrDecode)
+		}
+		if !strings.Contains(err.Error(), `unknown configuration key "App.Name"`) {
+			t.Fatalf("Load() error = %q, want unknown file key error", err.Error())
+		}
+	})
+}
+
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+
+	originalStderr := os.Stderr
+	readPipe, writePipe, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe() error = %v", err)
+	}
+	os.Stderr = writePipe
+
+	done := make(chan string, 1)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, readPipe)
+		done <- buf.String()
+	}()
+
+	fn()
+
+	_ = writePipe.Close()
+	os.Stderr = originalStderr
+	output := <-done
+	_ = readPipe.Close()
+	return output
+}
+
+func TestLoadStrictMode(t *testing.T) {
+	t.Run("missing optional field does not fail", func(t *testing.T) {
+		type config struct {
+			License string
+		}
+
+		dir := t.TempDir()
+		path := filepath.Join(dir, "config.json")
+		if err := os.WriteFile(path, []byte(`{}`), 0o600); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+
+		cfg := &config{}
+		if err := Load(cfg, Strict(), FromJSONFile(path)); err != nil {
+			t.Fatalf("Load() error = %v, want nil", err)
+		}
+		if cfg.License != "" {
+			t.Fatalf("License = %q, want empty", cfg.License)
+		}
+	})
+
+	t.Run("missing required field fails", func(t *testing.T) {
+		type config struct {
+			License string `validate:"required"`
+		}
+
+		dir := t.TempDir()
+		path := filepath.Join(dir, "config.json")
+		if err := os.WriteFile(path, []byte(`{}`), 0o600); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+
+		cfg := &config{}
+		err := Load(cfg, Strict(), FromJSONFile(path))
+		if err == nil {
+			t.Fatalf("Load() error = nil, want validation error")
+		}
+		if !errors.Is(err, ErrValidation) {
+			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrValidation)
+		}
+	})
+
+	t.Run("strict mode rejects unknown structured input keys", func(t *testing.T) {
+		type config struct {
+			Database struct {
+				Host string
+			}
+		}
+
+		dir := t.TempDir()
+		path := filepath.Join(dir, "config.json")
+		if err := os.WriteFile(path, []byte(`{"Databas":{"Host":"localhost"}}`), 0o600); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+
+		cfg := &config{}
+		err := Load(cfg, Strict(), FromJSONFile(path))
+		if err == nil {
+			t.Fatalf("Load() error = nil, want decode error")
+		}
+		if !errors.Is(err, ErrDecode) {
+			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrDecode)
+		}
+		if !strings.Contains(err.Error(), `unknown configuration key "Databas.Host"`) {
+			t.Fatalf("Load() error = %q, want unexpected key details", err.Error())
+		}
+		if !strings.Contains(err.Error(), `did you mean "Database.Host"?`) {
+			t.Fatalf("Load() error = %q, want schema suggestion", err.Error())
+		}
+	})
+
+	t.Run("strict mode rejects duplicate key mappings", func(t *testing.T) {
+		type config struct {
+			A string `key:"app.name"`
+			B string `key:"app.name"`
+		}
+
+		cfg := &config{}
+		err := Load(cfg, Strict())
+		if err == nil {
+			t.Fatalf("Load() error = nil, want invalid schema error")
+		}
+		if !errors.Is(err, ErrInvalidSchema) {
+			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrInvalidSchema)
+		}
+		if !strings.Contains(err.Error(), `conflicting key mapping "app.name"`) {
+			t.Fatalf("Load() error = %q, want conflicting key mapping details", err.Error())
+		}
+	})
+
+	t.Run("strict mode rejects duplicate env mappings", func(t *testing.T) {
+		type config struct {
+			A string `env:"APP_NAME"`
+			B string `env:"APP_NAME"`
+		}
+
+		cfg := &config{}
+		err := Load(cfg, Strict())
+		if err == nil {
+			t.Fatalf("Load() error = nil, want invalid schema error")
+		}
+		if !errors.Is(err, ErrInvalidSchema) {
+			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrInvalidSchema)
+		}
+		if !strings.Contains(err.Error(), `conflicting env mapping "APP_NAME"`) {
+			t.Fatalf("Load() error = %q, want conflicting env mapping details", err.Error())
+		}
+	})
+
+	t.Run("strict mode keeps env decode errors", func(t *testing.T) {
+		type config struct {
+			Port int `env:"PORT"`
+		}
+
+		t.Setenv("PORT", "bad-int")
+		cfg := &config{}
+		err := Load(cfg, Strict(), FromEnv())
+		if err == nil {
+			t.Fatalf("Load() error = nil, want decode error")
+		}
+		if !errors.Is(err, ErrDecode) {
+			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrDecode)
+		}
+		if !strings.Contains(err.Error(), "invalid int value") {
+			t.Fatalf("Load() error = %q, want invalid int decode details", err.Error())
+		}
+	})
+
+	t.Run("strict mode ignores unrelated env vars", func(t *testing.T) {
+		type config struct {
+			Port int `env:"PORT"`
+		}
+
+		t.Setenv("PORT", "8080")
+		t.Setenv("UNRELATED_KEY", "ignored")
+
+		cfg := &config{}
+		err := Load(cfg, Strict(), FromEnv())
+		if err != nil {
+			t.Fatalf("Load() error = %v, want nil", err)
+		}
+		if cfg.Port != 8080 {
+			t.Fatalf("Port = %d, want 8080", cfg.Port)
+		}
+	})
+
+	t.Run("strict mode keeps file decode mismatch errors", func(t *testing.T) {
+		type config struct {
+			Port int `key:"port"`
+		}
+
+		dir := t.TempDir()
+		path := filepath.Join(dir, "config.json")
+		if err := os.WriteFile(path, []byte(`{"port":"bad-int"}`), 0o600); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+
+		cfg := &config{}
+		err := Load(cfg, Strict(), FromJSONFile(path))
+		if err == nil {
+			t.Fatalf("Load() error = nil, want decode error")
+		}
+		if !errors.Is(err, ErrDecode) {
+			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrDecode)
+		}
+		if !strings.Contains(err.Error(), "invalid int value") {
+			t.Fatalf("Load() error = %q, want invalid int decode details", err.Error())
 		}
 	})
 }

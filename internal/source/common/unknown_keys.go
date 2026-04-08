@@ -12,34 +12,27 @@ type unknownKeyIssue struct {
 }
 
 func FindUnknownKeyIssues(sc *schema.Schema, doc Document, pathAliases map[string]string) []unknownKeyIssue {
+	return FindUnknownKeyIssuesWithMode(sc, doc, pathAliases, UnknownKeySuggestionError)
+}
+
+func FindUnknownKeyIssuesWithMode(sc *schema.Schema, doc Document, pathAliases map[string]string, mode UnknownKeySuggestionMode) []unknownKeyIssue {
 	if sc == nil {
 		return nil
 	}
 
 	expectedPaths := BuildExpectedLookupPaths(sc, pathAliases)
-	actualPaths := FlattenLeafPaths(doc)
-	actualSet := sliceToPathSet(actualPaths)
-
-	issues := make([]unknownKeyIssue, 0)
-
-	missingExpected := make([]string, 0, len(expectedPaths))
-	for path := range expectedPaths {
-		if _, ok := actualSet[path]; ok {
-			continue
-		}
-		missingExpected = append(missingExpected, path)
+	if mode == UnknownKeySuggestionOff {
+		return nil
 	}
-	sort.Strings(missingExpected)
 
-	actualSetForSuggest := sliceToPathSet(actualPaths)
-	for _, missingPath := range missingExpected {
-		suggestion, ok := SuggestPath(missingPath, actualSetForSuggest)
-		if ok {
-			issues = append(issues, unknownKeyIssue{
-				Path:       missingPath,
-				Suggestion: suggestion,
-			})
+	unknownInputPaths := FindUnknownKeys(doc, expectedPaths)
+	issues := make([]unknownKeyIssue, 0, len(unknownInputPaths))
+	for _, unknownPath := range unknownInputPaths {
+		issue := unknownKeyIssue{Path: unknownPath}
+		if suggestion, ok := SuggestPath(unknownPath, expectedPaths); ok {
+			issue.Suggestion = suggestion
 		}
+		issues = append(issues, issue)
 	}
 
 	return issues

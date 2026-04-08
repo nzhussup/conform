@@ -3,6 +3,7 @@ package common
 type UnknownKeySuggestionMode int
 
 const (
-	UnknownKeySuggestionError UnknownKeySuggestionMode = iota
+	UnknownKeySuggestionWarn UnknownKeySuggestionMode = iota
+	UnknownKeySuggestionError
 	UnknownKeySuggestionOff
 )

@@ -19,6 +19,11 @@ func Load(target any, opts ...Option) error {
 	if err != nil {
 		return err
 	}
+	if loadOpts.strict {
+		if err := internalschema.ValidateStrictMappings(sc); err != nil {
+			return err
+		}
+	}
 
 	if err := internaldefaults.Apply(sc); err != nil {
 		return err
