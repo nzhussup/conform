@@ -9,6 +9,7 @@ import (
 	envsource "github.com/nzhussup/konform/internal/source/env"
 
 	jsonsource "github.com/nzhussup/konform/internal/source/json"
+	tomlsource "github.com/nzhussup/konform/internal/source/toml"
 	yamlsource "github.com/nzhussup/konform/internal/source/yaml"
 )
 
@@ -43,6 +44,13 @@ func FromYAMLFile(path string) Option {
 func FromJSONFile(path string) Option {
 	return fromFile(path, errs.InvalidSchemaEmptyJSON, func(path string, callerDir string) sourceLoader {
 		source := jsonsource.NewFileSource(path, callerDir)
+		return source.Load
+	})
+}
+
+func FromTOMLFile(path string) Option {
+	return fromFile(path, errs.InvalidSchemaEmptyTOML, func(path string, callerDir string) sourceLoader {
+		source := tomlsource.NewFileSource(path, callerDir)
 		return source.Load
 	})
 }
