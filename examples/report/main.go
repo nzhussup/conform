@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -32,4 +33,5 @@ func main() {
 	}
 
 	report.Print(os.Stdout)
+	fmt.Printf("\n%+v\n", report)
 }
