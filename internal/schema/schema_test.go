@@ -53,14 +53,14 @@ func TestBuild(t *testing.T) {
 func TestBuildCollectsExportedAndNestedFields(t *testing.T) {
 	type nested struct {
 		Flag   bool   `env:"FLAG" validate:"required"`
-		hidden string `env:"HIDDEN"`
+		hidden string `env:"HIDDEN"` //nolint:unused // intentionally unexported test field
 	}
 
 	type config struct {
 		Name       string `key:"name" env:"NAME" default:"app" validate:"required"`
 		Count      int
 		Nested     nested `key:"nested"`
-		unexported string `key:"skip"`
+		unexported string `key:"skip"` //nolint:unused // intentionally unexported test field
 	}
 
 	s, err := Build(&config{})

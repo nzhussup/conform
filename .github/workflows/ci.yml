@@ -32,6 +32,12 @@ jobs:
       - name: Go vet
         run: make vet
 
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --config .golangci.yml
+
       - name: Tests
         run: make test
 
