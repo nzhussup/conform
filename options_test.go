@@ -250,6 +250,108 @@ func TestFileOptions(t *testing.T) {
 	}
 }
 
+func TestBytesOptions(t *testing.T) {
+	tests := []struct {
+		name        string
+		option      func(data []byte) Option
+		data        []byte
+		wantErrType error
+		validate    func(t *testing.T, o *loadOptions, sc *schema.Schema)
+	}{
+		{
+			name:        "yaml empty bytes",
+			option:      FromYAMLBytes,
+			data:        nil,
+			wantErrType: errs.InvalidSchemaEmptyYAMLBytes,
+		},
+		{
+			name:        "json empty bytes",
+			option:      FromJSONBytes,
+			data:        nil,
+			wantErrType: errs.InvalidSchemaEmptyJSONBytes,
+		},
+		{
+			name:        "toml empty bytes",
+			option:      FromTOMLBytes,
+			data:        nil,
+			wantErrType: errs.InvalidSchemaEmptyTOMLBytes,
+		},
+		{
+			name:   "yaml registers source and loads data",
+			option: FromYAMLBytes,
+			data:   []byte("port: \"8081\"\n"),
+			validate: func(t *testing.T, o *loadOptions, sc *schema.Schema) {
+				t.Helper()
+				if got := len(o.sources); got != 1 {
+					t.Fatalf("len(sources) = %d, want 1", got)
+				}
+				if err := o.sources[0](sc); err != nil {
+					t.Fatalf("source() error = %v, want nil", err)
+				}
+				if got := sc.Fields[0].Value.Interface().(int); got != 8081 {
+					t.Fatalf("Port = %d, want 8081", got)
+				}
+			},
+		},
+		{
+			name:   "json registers source and loads data",
+			option: FromJSONBytes,
+			data:   []byte(`{"port":"8082"}`),
+			validate: func(t *testing.T, o *loadOptions, sc *schema.Schema) {
+				t.Helper()
+				if got := len(o.sources); got != 1 {
+					t.Fatalf("len(sources) = %d, want 1", got)
+				}
+				if err := o.sources[0](sc); err != nil {
+					t.Fatalf("source() error = %v, want nil", err)
+				}
+				if got := sc.Fields[0].Value.Interface().(int); got != 8082 {
+					t.Fatalf("Port = %d, want 8082", got)
+				}
+			},
+		},
+		{
+			name:   "toml registers source and loads data",
+			option: FromTOMLBytes,
+			data:   []byte("port = \"8083\"\n"),
+			validate: func(t *testing.T, o *loadOptions, sc *schema.Schema) {
+				t.Helper()
+				if got := len(o.sources); got != 1 {
+					t.Fatalf("len(sources) = %d, want 1", got)
+				}
+				if err := o.sources[0](sc); err != nil {
+					t.Fatalf("source() error = %v, want nil", err)
+				}
+				if got := sc.Fields[0].Value.Interface().(int); got != 8083 {
+					t.Fatalf("Port = %d, want 8083", got)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opt := tt.option(tt.data)
+			if tt.wantErrType != nil {
+				assertOptionError(t, opt(nil), tt.wantErrType)
+				return
+			}
+			assertOptionError(t, opt(nil), errs.InvalidSchemaNilOptions)
+
+			o := &loadOptions{}
+			if err := opt(o); err != nil {
+				t.Fatalf("option(loadOptions) error = %v, want nil", err)
+			}
+
+			var port int
+			sc := makePortSchema(&port)
+			if tt.validate != nil {
+				tt.validate(t, o, sc)
+			}
+		})
+	}
+}
+
 func makePortSchema(target *int) *schema.Schema {
 	return &schema.Schema{
 		Fields: []schema.Field{

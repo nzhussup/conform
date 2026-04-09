@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -131,25 +134,47 @@ type Log struct {
 }
 
 func main() {
+	configPath := configFilePath("config.toml")
+
 	var flatCfg ConfigFlat
 
-	if _, err := konform.Load(&flatCfg, konform.FromTOMLFile("config.toml")); err != nil {
+	if _, err := konform.Load(&flatCfg, konform.FromTOMLFile(configPath)); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Flat config:\n%+v\n", flatCfg)
 
+	tomlBytes, err := os.ReadFile(configPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var bytesCfg ConfigFlat
+	if _, err := konform.Load(&bytesCfg, konform.FromTOMLBytes(tomlBytes)); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Bytes config:\n%+v\n", bytesCfg)
+
 	var inlineNestedCfg ConfigInlineNested
-	if _, err := konform.Load(&inlineNestedCfg, konform.FromTOMLFile("config.toml")); err != nil {
+	if _, err := konform.Load(&inlineNestedCfg, konform.FromTOMLFile(configPath)); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Inline nested config:\n%+v\n", inlineNestedCfg)
 
 	var nestedCfg ConfigNested
-	if _, err := konform.Load(&nestedCfg, konform.FromTOMLFile("config.toml")); err != nil {
+	if _, err := konform.Load(&nestedCfg, konform.FromTOMLFile(configPath)); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Printf("Nested config:\n%+v\n", nestedCfg)
+}
+
+func configFilePath(name string) string {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		return name
+	}
+	return filepath.Join(filepath.Dir(thisFile), name)
 }
