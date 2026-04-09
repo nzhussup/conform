@@ -43,7 +43,7 @@ Use Viper/Koanf when you need broader provider ecosystems, dynamic config workfl
 - Schema-first configuration from typed Go structs
 - Multiple sources: environment variables, YAML files, JSON files, TOML files
 - Defaults via struct tags
-- Validation rules (`required`, `min`, `max`, `len`, `regex`, `oneof`, and more)
+- Validation rules (`required`, `min`, `max`, `len`, `minlen`, `maxlen`, `regex`, `oneof`, `nonzero`, `url`, `email`)
 - Strict mode (`konform.Strict()`) for unknown structured keys and mapping conflicts
 - Unknown-key handling modes: `konform.Warn`, `konform.Error`, `konform.Off`
 - Load report with field values and value sources

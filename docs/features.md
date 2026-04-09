@@ -30,6 +30,9 @@ Common rules include:
 - `len`, `minlen`, `maxlen`
 - `regex`
 - `oneof`
+- `nonzero`
+- `url`
+- `email`
 
 ## Unknown key handling
 

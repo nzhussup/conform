@@ -14,6 +14,9 @@ var Registry = map[string]types.ValidationFunc{
 	validators.MaxLenRuleName:   validators.MaxLen,
 	validators.RegexRuleName:    validators.Regex,
 	validators.OneOfRuleName:    validators.OneOf,
+	validators.NonZeroRuleName:  validators.NonZero,
+	validators.URLRuleName:      validators.URL,
+	validators.EmailRuleName:    validators.Email,
 }
 
 func IsSupported(name string) bool {

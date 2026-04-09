@@ -18,5 +18,10 @@
             "error"
         ]
     },
-    "NumberOfWorkers": 5
+    "NumberOfWorkers": 5,
+    "NumberOfRetries": 0,
+    "URL": "https://example.com/api",
+    "InvalidURL": "htp:/invalid-url",
+    "ValidEmail": "user@example.com",
+    "InvalidEmail": "userexample.com"
 }

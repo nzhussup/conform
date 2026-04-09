@@ -25,7 +25,12 @@ type Config struct {
 	Logging struct {
 		Level string `validate:"required,oneof=debug|warn|error"`
 	} `validate:"required"`
-	NumberOfWorkers int `validate:"oneof=1|2|4|8"`
+	NumberOfWorkers int    `validate:"oneof=1|2|4|8"`
+	NumberOfRetries int    `validate:"nonzero"`
+	URL             string `validate:"required,url"`
+	InvalidURL      string `validate:"url"`
+	ValidEmail      string `validate:"required,email"`
+	InvalidEmail    string `validate:"email"`
 }
 
 func main() {

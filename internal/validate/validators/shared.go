@@ -25,3 +25,7 @@ func parsePipeSeparated(s string) []string {
 	}
 	return result
 }
+
+func isNumericKind(k reflect.Kind) bool {
+	return k >= reflect.Int && k <= reflect.Float64
+}
