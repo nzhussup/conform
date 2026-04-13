@@ -43,3 +43,14 @@ jobs:
 
       - name: Race tests
         run: make test-race
+
+      - name: Coverage
+        if: matrix.go-version == 'stable'
+        run: go test -coverprofile=coverage.out ./...
+
+      - name: Upload coverage to Codecov
+        if: matrix.go-version == 'stable'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.out
+          fail_ci_if_error: false

@@ -5,6 +5,8 @@
 <p align="center">
   <a href="https://pkg.go.dev/github.com/nzhussup/konform"><img src="https://pkg.go.dev/badge/github.com/nzhussup/konform.svg" alt="Go Reference"></a>
   <a href="https://github.com/nzhussup/konform/actions/workflows/ci.yml"><img src="https://github.com/nzhussup/konform/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+	<a href="https://github.com/nzhussup/konform/releases/latest"><img src="https://img.shields.io/github/v/release/nzhussup/konform?display_name=tag" alt="Release"></a>
+	<a href="https://codecov.io/gh/nzhussup/konform"><img src="https://codecov.io/gh/nzhussup/konform/graph/badge.svg" alt="Coverage"></a>
   <a href="https://goreportcard.com/report/github.com/nzhussup/konform"><img src="https://goreportcard.com/badge/github.com/nzhussup/konform" alt="Go Report Card"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/nzhussup/konform" alt="License"></a>
 </p>
@@ -183,6 +185,7 @@ More docs:
 - [Strict Mode](docs/strict-mode.md)
 - [Reporting](docs/reporting.md)
 - [Reference](docs/reference.md)
+- [Stability and Support Policy](docs/stability.md)
 
 ## Philosophy
 
@@ -190,9 +193,10 @@ More docs:
 - Explicit behavior
 - Idiomatic Go APIs and errors
 
-## Status
+## Stability
 
-> pre-v1, API may evolve
+Konform follows semantic versioning and a documented compatibility policy.
+See [Stability and Support Policy](docs/stability.md).
 
 ## License
 

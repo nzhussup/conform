@@ -12,4 +12,9 @@ https://github.com/nzhussup/konform/security/advisories/new
 
 ## Supported Versions
 
-Konform is in early development. Security fixes are generally provided for the latest released version.
+Security fixes are provided for:
+
+- the latest stable release
+- the previous stable release line when a fix can be safely backported
+
+In practice, most security fixes are released in the latest stable version first.
