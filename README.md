@@ -44,6 +44,7 @@ Use Viper/Koanf when you need broader provider ecosystems, dynamic config workfl
 - Multiple sources: environment variables, `.env` files, YAML/JSON/TOML files, YAML/JSON/TOML bytes
 - Environment prefixing for env and `.env` lookups via `konform.WithEnvPrefix(...)`
 - Defaults via struct tags
+- Custom decoding via `encoding.TextUnmarshaler` (including pointer fields)
 - Validation rules (`required`, `min`, `max`, `len`, `minlen`, `maxlen`, `regex`, `oneof`, `nonzero`, `url`, `email`)
 - Custom validators via `konform.WithCustomValidator(...)`
 - Strict mode (`konform.Strict()`) for unknown structured keys and mapping conflicts

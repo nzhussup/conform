@@ -39,6 +39,31 @@ konform.Load(
 - `validate`: validation rules after loading
 - `secret`: mask field value in report (`***`)
 
+## Custom type decoding
+
+Fields that implement `encoding.TextUnmarshaler` are decoded from strings.
+
+- Works for both value and pointer fields
+- Applies consistently across file, `.env`, and environment-variable sources
+
+```go
+type LogFormat string
+
+func (f *LogFormat) UnmarshalText(text []byte) error {
+	switch strings.ToLower(string(text)) {
+	case "json", "text":
+		*f = LogFormat(strings.ToLower(string(text)))
+		return nil
+	default:
+		return fmt.Errorf("invalid format %q", string(text))
+	}
+}
+
+type Config struct {
+	Format *LogFormat `key:"log.format" env:"LOG_FORMAT"`
+}
+```
+
 ## Validation
 
 Validation runs after all defaults and sources are applied.

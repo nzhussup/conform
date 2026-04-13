@@ -128,6 +128,10 @@ func setWithTextUnmarshaler(v reflect.Value, raw any) error {
 		return fmt.Errorf("%w: expected string, got %T", errs.DecodeTypeMismatch, raw)
 	}
 
+	if v.Kind() == reflect.Pointer && v.Type().Implements(textUnmarshalerType) && v.IsNil() {
+		v.Set(reflect.New(v.Type().Elem()))
+	}
+
 	if v.CanAddr() && v.Addr().Type().Implements(textUnmarshalerType) {
 		u := v.Addr().Interface().(encoding.TextUnmarshaler)
 		if err := u.UnmarshalText([]byte(s)); err != nil {

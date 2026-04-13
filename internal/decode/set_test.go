@@ -196,6 +196,15 @@ func TestSetFieldValue(t *testing.T) {
 			want:  upperText("HELLO"),
 		},
 		{
+			name:  "pointer text unmarshaler from string",
+			field: makeField(new(*upperText)),
+			raw:   "hello",
+			want: func() any {
+				v := upperText("HELLO")
+				return &v
+			}(),
+		},
+		{
 			name:        "text unmarshaler rejects non-string",
 			field:       makeField(new(upperText)),
 			raw:         1,
@@ -205,6 +214,13 @@ func TestSetFieldValue(t *testing.T) {
 		{
 			name:        "text unmarshaler returns decode error",
 			field:       makeField(new(failingText)),
+			raw:         "x",
+			wantErrType: errs.Decode,
+			wantErrLike: "bad text",
+		},
+		{
+			name:        "pointer text unmarshaler returns decode error",
+			field:       makeField(new(*failingText)),
 			raw:         "x",
 			wantErrType: errs.Decode,
 			wantErrLike: "bad text",
