@@ -306,3 +306,152 @@ func TestSetFieldValue(t *testing.T) {
 		})
 	}
 }
+
+func TestDecodeHelpers(t *testing.T) {
+	t.Run("toDuration handles direct duration and type mismatch", func(t *testing.T) {
+		got, err := toDuration(2 * time.Second)
+		if err != nil {
+			t.Fatalf("toDuration(duration) error = %v, want nil", err)
+		}
+		if got != 2*time.Second {
+			t.Fatalf("toDuration(duration) = %v, want %v", got, 2*time.Second)
+		}
+
+		_, err = toDuration(true)
+		if err == nil {
+			t.Fatalf("toDuration(bool) error = nil, want error")
+		}
+		if !errors.Is(err, errs.DecodeTypeMismatch) {
+			t.Fatalf("toDuration(bool) error = %v, want wrapped %v", err, errs.DecodeTypeMismatch)
+		}
+	})
+
+	t.Run("toInt64FromNumeric handles additional numeric kinds", func(t *testing.T) {
+		cases := []any{int(1), int8(2), int16(3), int32(4), int64(5), uint8(7), uint16(8), uint32(9), float32(10)}
+		for _, in := range cases {
+			got, ok, err := toInt64FromNumeric(in, errs.DecodeInvalidInt, "int")
+			if err != nil {
+				t.Fatalf("toInt64FromNumeric(%T) error = %v, want nil", in, err)
+			}
+			if !ok {
+				t.Fatalf("toInt64FromNumeric(%T) ok = false, want true", in)
+			}
+			if got <= 0 {
+				t.Fatalf("toInt64FromNumeric(%T) = %d, want > 0", in, got)
+			}
+		}
+	})
+
+	t.Run("toInt64FromNumeric handles uint and uint64", func(t *testing.T) {
+		for _, in := range []any{uint(11), uint64(12)} {
+			got, ok, err := toInt64FromNumeric(in, errs.DecodeInvalidInt, "int")
+			if err != nil {
+				t.Fatalf("toInt64FromNumeric(%T) error = %v, want nil", in, err)
+			}
+			if !ok || got <= 0 {
+				t.Fatalf("toInt64FromNumeric(%T) = (%d, %v), want (>0, true)", in, got, ok)
+			}
+		}
+	})
+
+	t.Run("toInt64FromNumeric overflow paths", func(t *testing.T) {
+		_, ok, err := toInt64FromNumeric(uint64(math.MaxInt64)+1, errs.DecodeInvalidInt, "int")
+		if !ok || err == nil || !errors.Is(err, errs.DecodeInvalidInt) {
+			t.Fatalf("uint64 overflow = (ok=%v, err=%v), want wrapped %v", ok, err, errs.DecodeInvalidInt)
+		}
+
+		_, ok, err = toInt64FromNumeric(float64(math.MaxInt64)*2, errs.DecodeInvalidInt, "int")
+		if !ok || err == nil || !errors.Is(err, errs.DecodeInvalidInt) {
+			t.Fatalf("float overflow = (ok=%v, err=%v), want wrapped %v", ok, err, errs.DecodeInvalidInt)
+		}
+	})
+
+	t.Run("toInt64FromNumeric returns not-handled for unsupported kind", func(t *testing.T) {
+		got, ok, err := toInt64FromNumeric("11", errs.DecodeInvalidInt, "int")
+		if err != nil {
+			t.Fatalf("toInt64FromNumeric(string) error = %v, want nil", err)
+		}
+		if ok {
+			t.Fatalf("toInt64FromNumeric(string) ok = true, want false")
+		}
+		if got != 0 {
+			t.Fatalf("toInt64FromNumeric(string) = %d, want 0", got)
+		}
+	})
+
+	t.Run("floatToInt64 rejects NaN and Inf", func(t *testing.T) {
+		for _, in := range []float64{math.NaN(), math.Inf(1), math.Inf(-1)} {
+			_, err := floatToInt64(in, errs.DecodeInvalidInt, "int")
+			if err == nil {
+				t.Fatalf("floatToInt64(%v) error = nil, want error", in)
+			}
+			if !errors.Is(err, errs.DecodeInvalidInt) {
+				t.Fatalf("floatToInt64(%v) error = %v, want wrapped %v", in, err, errs.DecodeInvalidInt)
+			}
+		}
+	})
+
+	t.Run("toBool accepts bool directly", func(t *testing.T) {
+		got, err := toBool(true)
+		if err != nil {
+			t.Fatalf("toBool(true) error = %v, want nil", err)
+		}
+		if !got {
+			t.Fatalf("toBool(true) = false, want true")
+		}
+	})
+
+	t.Run("toFloat64 handles all numeric kinds and bool mismatch", func(t *testing.T) {
+		cases := []struct {
+			in   any
+			want float64
+		}{
+			{float32(1.5), 1.5},
+			{float64(2.5), 2.5},
+			{int(3), 3},
+			{int8(4), 4},
+			{int16(5), 5},
+			{int32(6), 6},
+			{int64(7), 7},
+			{uint(8), 8},
+			{uint8(9), 9},
+			{uint16(10), 10},
+			{uint32(11), 11},
+			{uint64(12), 12},
+		}
+
+		for _, c := range cases {
+			got, err := toFloat64(c.in)
+			if err != nil {
+				t.Fatalf("toFloat64(%T) error = %v, want nil", c.in, err)
+			}
+			if got != c.want {
+				t.Fatalf("toFloat64(%T) = %v, want %v", c.in, got, c.want)
+			}
+		}
+
+		_, err := toFloat64(true)
+		if err == nil {
+			t.Fatalf("toFloat64(bool) error = nil, want error")
+		}
+		if !errors.Is(err, errs.DecodeTypeMismatch) {
+			t.Fatalf("toFloat64(bool) error = %v, want wrapped %v", err, errs.DecodeTypeMismatch)
+		}
+	})
+
+	t.Run("toSlice returns zero slice for nil input", func(t *testing.T) {
+		v, err := toSlice(reflect.TypeOf([]int{}), nil)
+		if err != nil {
+			t.Fatalf("toSlice(nil) error = %v, want nil", err)
+		}
+		if !v.IsNil() {
+			t.Fatalf("toSlice(nil) = %#v, want nil slice", v.Interface())
+		}
+	})
+
+	t.Run("canDecodeWithTextUnmarshaler false for plain type", func(t *testing.T) {
+		if canDecodeWithTextUnmarshaler(reflect.ValueOf(1)) {
+			t.Fatalf("canDecodeWithTextUnmarshaler(int) = true, want false")
+		}
+	})
+}

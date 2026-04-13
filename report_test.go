@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
+
+	internalschema "github.com/nzhussup/konform/internal/schema"
 )
 
 func TestLoadReportSourcesAndPrint(t *testing.T) {
@@ -97,5 +100,74 @@ func TestLoadReturnsReportWithError(t *testing.T) {
 	}
 	if report.Entries[0].Path != "Name" {
 		t.Fatalf("report entry path = %q, want %q", report.Entries[0].Path, "Name")
+	}
+}
+
+func TestLoadReportPrintNoOp(t *testing.T) {
+	var nilReport *LoadReport
+	nilReport.Print(&bytes.Buffer{})
+
+	empty := &LoadReport{}
+	empty.Print(&bytes.Buffer{})
+
+	withEntries := &LoadReport{Entries: []ReportEntry{{Path: "a", Value: "1", Source: "default"}}}
+	withEntries.Print(nil)
+}
+
+func TestBuildReportNilSchema(t *testing.T) {
+	if got := buildReport(nil); got != nil {
+		t.Fatalf("buildReport(nil) = %#v, want nil", got)
+	}
+}
+
+func TestBuildReportResolvesAliasesAndZeroSource(t *testing.T) {
+	server := struct{}{}
+	port := 8080
+	dbURL := "postgres://db"
+
+	sc := &internalschema.Schema{Fields: []internalschema.Field{
+		{
+			Path:    "Server",
+			KeyName: "server",
+			Type:    reflect.TypeOf(server),
+			Value:   reflect.ValueOf(server),
+		},
+		{
+			Path:  "Server.Port",
+			Type:  reflect.TypeOf(port),
+			Value: reflect.ValueOf(port),
+		},
+		{
+			Path:    "Database.URL",
+			KeyName: "database.url",
+			Type:    reflect.TypeOf(dbURL),
+			Value:   reflect.ValueOf(dbURL),
+			Source:  "config.yaml",
+		},
+	}}
+
+	report := buildReport(sc)
+	if report == nil {
+		t.Fatalf("buildReport() = nil, want non-nil")
+	}
+	if len(report.Entries) != 2 {
+		t.Fatalf("len(report.Entries) = %d, want 2", len(report.Entries))
+	}
+
+	entries := make(map[string]ReportEntry, len(report.Entries))
+	for _, e := range report.Entries {
+		entries[e.Path] = e
+	}
+
+	portEntry, ok := entries["server.Port"]
+	if !ok {
+		t.Fatalf("missing alias-resolved entry for server.Port")
+	}
+	if portEntry.Source != "zero" {
+		t.Fatalf("server.Port source = %q, want %q", portEntry.Source, "zero")
+	}
+
+	if _, ok := entries["database.url"]; !ok {
+		t.Fatalf("missing entry for database.url")
 	}
 }

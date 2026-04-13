@@ -13,6 +13,51 @@ import (
 	"github.com/nzhussup/konform/internal/schema"
 )
 
+func TestDotEnvParsingHelpers(t *testing.T) {
+	t.Run("parseDotEnvValue empty", func(t *testing.T) {
+		got, err := parseDotEnvValue("", 1)
+		if err != nil {
+			t.Fatalf("parseDotEnvValue() error = %v, want nil", err)
+		}
+		if got != "" {
+			t.Fatalf("parseDotEnvValue() = %q, want empty", got)
+		}
+	})
+
+	t.Run("parseSingleQuotedDotEnvValue unterminated", func(t *testing.T) {
+		_, err := parseSingleQuotedDotEnvValue("'abc", 2)
+		if err == nil || !strings.Contains(err.Error(), "unterminated quoted value") {
+			t.Fatalf("parseSingleQuotedDotEnvValue() error = %v, want unterminated quoted value", err)
+		}
+	})
+
+	t.Run("parseDoubleQuotedDotEnvValue invalid escape", func(t *testing.T) {
+		_, err := parseDoubleQuotedDotEnvValue(`"\xZZ"`, 3)
+		if err == nil || !strings.Contains(err.Error(), "invalid quoted value") {
+			t.Fatalf("parseDoubleQuotedDotEnvValue() error = %v, want invalid quoted value", err)
+		}
+	})
+
+	t.Run("validateDotEnvTail accepts comment and rejects garbage", func(t *testing.T) {
+		if err := validateDotEnvTail("   # comment", 4); err != nil {
+			t.Fatalf("validateDotEnvTail(comment) error = %v, want nil", err)
+		}
+		if err := validateDotEnvTail(" trailing", 4); err == nil {
+			t.Fatalf("validateDotEnvTail(garbage) error = nil, want error")
+		}
+	})
+
+	t.Run("parseDotEnv supports export directive", func(t *testing.T) {
+		values, err := parseDotEnv([]byte("export APP_NAME=konform\n"))
+		if err != nil {
+			t.Fatalf("parseDotEnv() error = %v, want nil", err)
+		}
+		if got := values["APP_NAME"]; got != "konform" {
+			t.Fatalf("APP_NAME = %q, want %q", got, "konform")
+		}
+	})
+}
+
 func TestDotEnvFileSourceLoadFile(t *testing.T) {
 	t.Run("nil schema", func(t *testing.T) {
 		dir := t.TempDir()
