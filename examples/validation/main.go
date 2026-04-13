@@ -39,6 +39,8 @@ type Config struct {
 func main() {
 	cfg := Config{}
 
+	fmt.Printf("\nKonform Version: %s\n\n", konform.Version)
+
 	startsWith := func(value any, ruleValue string) error {
 		raw, ok := value.(string)
 		if !ok {

@@ -34,4 +34,5 @@ func main() {
 
 	report.Print(os.Stdout)
 	fmt.Printf("\n%+v\n", report)
+	fmt.Printf("\n\nKonform Version: %s\n", konform.Version)
 }

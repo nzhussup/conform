@@ -66,4 +66,6 @@ func main() {
 	}
 
 	fmt.Printf("%+v\n", cfg)
+
+	fmt.Printf("\n\nKonform Version: %s\n", konform.Version)
 }

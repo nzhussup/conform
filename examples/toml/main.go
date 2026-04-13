@@ -169,6 +169,7 @@ func main() {
 	}
 
 	fmt.Printf("Nested config:\n%+v\n", nestedCfg)
+	fmt.Printf("\n\nKonform Version: %s\n", konform.Version)
 }
 
 func configFilePath(name string) string {
