@@ -139,6 +139,23 @@ func TestLoadSuccessWithDotEnvFileSource(t *testing.T) {
 	}
 }
 
+func TestLoadSuccessWithEnvPrefix(t *testing.T) {
+	t.Setenv("APP_NAME", "api-prefixed")
+	t.Setenv("APP_PORT", "7071")
+
+	cfg := &loadTestConfig{}
+	_, err := Load(cfg, FromEnv(), WithEnvPrefix("APP_"))
+	if err != nil {
+		t.Fatalf("Load() error = %v, want nil", err)
+	}
+	if cfg.Name != "api-prefixed" {
+		t.Fatalf("Name = %q, want %q", cfg.Name, "api-prefixed")
+	}
+	if cfg.Port != 7071 {
+		t.Fatalf("Port = %d, want %d", cfg.Port, 7071)
+	}
+}
+
 func TestLoadReportsMultipleDecodeErrorsFromFile(t *testing.T) {
 	type config struct {
 		Name  string `key:"name"`

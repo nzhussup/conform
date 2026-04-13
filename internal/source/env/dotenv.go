@@ -16,10 +16,11 @@ import (
 type DotEnvFileSource struct {
 	path      string
 	callerDir string
+	prefix    string
 }
 
-func NewDotEnvFileSource(path string, callerDir string) DotEnvFileSource {
-	return DotEnvFileSource{path: path, callerDir: callerDir}
+func NewDotEnvFileSource(path string, callerDir string, prefix string) DotEnvFileSource {
+	return DotEnvFileSource{path: path, callerDir: callerDir, prefix: prefix}
 }
 
 func (s DotEnvFileSource) LoadFile(sc *schema.Schema) error {
@@ -40,7 +41,7 @@ func (s DotEnvFileSource) LoadFile(sc *schema.Schema) error {
 	return loadWithLookup(sc, func(key string) (string, bool) {
 		value, ok := values[key]
 		return value, ok
-	}, s.path)
+	}, s.path, s.prefix)
 }
 
 func parseDotEnv(data []byte) (map[string]string, error) {

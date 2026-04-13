@@ -37,6 +37,7 @@ func main() {
 		konform.FromYAMLFile("config.yaml"),
 		konform.FromDotEnvFile(".env"),
 		konform.FromEnv(),
+		konform.WithEnvPrefix("APP_"), // optional
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -64,6 +65,7 @@ report, err := konform.Load(
 	konform.FromYAMLFile("config.yaml"),
 	konform.FromDotEnvFile(".env"),
 	konform.FromEnv(),
+	konform.WithEnvPrefix("APP_"), // optional
 )
 ```
 

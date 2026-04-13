@@ -199,3 +199,29 @@ func TestLoad(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadWithPrefix(t *testing.T) {
+	t.Setenv("APP_PORT", "9191")
+
+	port := 0
+	sc := &schema.Schema{
+		Fields: []schema.Field{
+			{
+				Path:    "Port",
+				EnvName: "PORT",
+				Type:    reflect.TypeOf(0),
+				Value:   reflect.ValueOf(&port).Elem(),
+			},
+		},
+	}
+
+	if err := LoadWithPrefix(sc, "APP_"); err != nil {
+		t.Fatalf("LoadWithPrefix() error = %v, want nil", err)
+	}
+	if port != 9191 {
+		t.Fatalf("Port = %d, want 9191", port)
+	}
+	if got := sc.Fields[0].Source; got != "env:APP_PORT" {
+		t.Fatalf("source = %q, want %q", got, "env:APP_PORT")
+	}
+}

@@ -92,6 +92,7 @@ func main() {
 		konform.FromYAMLFile("config.yaml"),
 		konform.FromDotEnvFile(".env"),
 		konform.FromEnv(),
+		konform.WithEnvPrefix("APP_"),
 		konform.WithUnknownKeySuggestionMode(konform.Warn),
 	)
 	if err != nil {

@@ -58,6 +58,39 @@ func TestFromEnv(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "loads prefixed env values when WithEnvPrefix is set",
+			setup: func(t *testing.T) (*loadOptions, *schema.Schema) {
+				t.Helper()
+				t.Setenv("APP_PORT", "9091")
+
+				var port int
+				sc := &schema.Schema{
+					Fields: []schema.Field{
+						{
+							Path:    "Port",
+							EnvName: "PORT",
+							Type:    reflect.TypeOf(0),
+							Value:   reflect.ValueOf(&port).Elem(),
+						},
+					},
+				}
+				o := &loadOptions{}
+				if err := WithEnvPrefix("APP_")(o); err != nil {
+					t.Fatalf("WithEnvPrefix() error = %v, want nil", err)
+				}
+				return o, sc
+			},
+			validate: func(t *testing.T, o *loadOptions, sc *schema.Schema) {
+				t.Helper()
+				if err := o.sources[0](sc); err != nil {
+					t.Fatalf("source() error = %v, want nil", err)
+				}
+				if got := sc.Fields[0].Value.Interface().(int); got != 9091 {
+					t.Fatalf("Port = %d, want 9091", got)
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -128,6 +161,60 @@ func TestFromDotEnvFile(t *testing.T) {
 		}
 		if port != 8084 {
 			t.Fatalf("Port = %d, want 8084", port)
+		}
+	})
+
+	t.Run("loads prefixed .env value when WithEnvPrefix is set", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, ".env")
+		if err := os.WriteFile(path, []byte("APP_PORT=8085\n"), 0o600); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+
+		o := &loadOptions{}
+		if err := FromDotEnvFile(path)(o); err != nil {
+			t.Fatalf("FromDotEnvFile() error = %v, want nil", err)
+		}
+		if err := WithEnvPrefix("APP_")(o); err != nil {
+			t.Fatalf("WithEnvPrefix() error = %v, want nil", err)
+		}
+
+		var port int
+		sc := &schema.Schema{
+			Fields: []schema.Field{
+				{
+					Path:    "Port",
+					EnvName: "PORT",
+					Type:    reflect.TypeOf(0),
+					Value:   reflect.ValueOf(&port).Elem(),
+				},
+			},
+		}
+
+		if err := o.sources[0](sc); err != nil {
+			t.Fatalf("source() error = %v, want nil", err)
+		}
+		if port != 8085 {
+			t.Fatalf("Port = %d, want 8085", port)
+		}
+	})
+}
+
+func TestWithEnvPrefix(t *testing.T) {
+	t.Run("nil load options", func(t *testing.T) {
+		err := WithEnvPrefix("APP_")(nil)
+		if !errors.Is(err, errs.InvalidSchemaNilOptions) {
+			t.Fatalf("WithEnvPrefix(nil) error = %v, want %v", err, errs.InvalidSchemaNilOptions)
+		}
+	})
+
+	t.Run("sets prefix", func(t *testing.T) {
+		o := &loadOptions{}
+		if err := WithEnvPrefix("APP_")(o); err != nil {
+			t.Fatalf("WithEnvPrefix() error = %v, want nil", err)
+		}
+		if got := o.envPrefix; got != "APP_" {
+			t.Fatalf("envPrefix = %q, want %q", got, "APP_")
 		}
 	})
 }

@@ -19,6 +19,7 @@ func Load(target any, opts ...Option) (*LoadReport, error)
 - `FromYAMLBytes(data []byte)`
 - `FromTOMLBytes(data []byte)`
 - `FromEnv()`
+- `WithEnvPrefix(prefix string)`
 - `WithUnknownKeySuggestionMode(mode UnknownKeySuggestionMode)`
 - `Strict()`
 

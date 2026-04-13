@@ -21,6 +21,7 @@ type sourceLoader func(*internalschema.Schema) error
 type loadOptions struct {
 	sources               []sourceLoader
 	unknownKeySuggestMode common.UnknownKeySuggestionMode
+	envPrefix             string
 	strict                bool
 }
 
@@ -41,16 +42,32 @@ func FromEnv() Option {
 			return errs.InvalidSchemaNilOptions
 		}
 
-		o.sources = append(o.sources, envsource.Load)
+		o.sources = append(o.sources, func(sc *internalschema.Schema) error {
+			return envsource.LoadWithPrefix(sc, o.envPrefix)
+		})
 		return nil
 	}
 }
 
 func FromDotEnvFile(path string) Option {
-	return fromFile(path, errs.InvalidSchemaEmptyDotEnv, func(path string, callerDir string, _ common.UnknownKeySuggestionMode) sourceLoader {
-		source := envsource.NewDotEnvFileSource(path, callerDir)
-		return source.LoadFile
-	})
+	if path == "" {
+		return func(o *loadOptions) error {
+			return errs.InvalidSchemaEmptyDotEnv
+		}
+	}
+
+	callerDir := callerDirectory(3)
+	return func(o *loadOptions) error {
+		if o == nil {
+			return errs.InvalidSchemaNilOptions
+		}
+
+		o.sources = append(o.sources, func(sc *internalschema.Schema) error {
+			source := envsource.NewDotEnvFileSource(path, callerDir, o.envPrefix)
+			return source.LoadFile(sc)
+		})
+		return nil
+	}
 }
 
 func FromYAMLFile(path string) Option {
@@ -165,6 +182,17 @@ func Strict() Option {
 		}
 
 		o.strict = true
+		return nil
+	}
+}
+
+func WithEnvPrefix(prefix string) Option {
+	return func(o *loadOptions) error {
+		if o == nil {
+			return errs.InvalidSchemaNilOptions
+		}
+
+		o.envPrefix = prefix
 		return nil
 	}
 }

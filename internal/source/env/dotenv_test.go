@@ -21,7 +21,7 @@ func TestDotEnvFileSourceLoadFile(t *testing.T) {
 			t.Fatalf("WriteFile() error = %v", err)
 		}
 
-		source := NewDotEnvFileSource(path, "")
+		source := NewDotEnvFileSource(path, "", "")
 		err := source.LoadFile(nil)
 		if !errors.Is(err, errs.InvalidSchemaNil) {
 			t.Fatalf("LoadFile() error = %v, want wrapped %v", err, errs.InvalidSchemaNil)
@@ -86,7 +86,7 @@ func TestDotEnvFileSourceLoadFile(t *testing.T) {
 			},
 		}
 
-		source := NewDotEnvFileSource(path, "")
+		source := NewDotEnvFileSource(path, "", "")
 		if err := source.LoadFile(sc); err != nil {
 			t.Fatalf("LoadFile() error = %v, want nil", err)
 		}
@@ -130,7 +130,7 @@ func TestDotEnvFileSourceLoadFile(t *testing.T) {
 			},
 		}
 
-		source := NewDotEnvFileSource(".env", dir)
+		source := NewDotEnvFileSource(".env", dir, "")
 		if err := source.LoadFile(sc); err != nil {
 			t.Fatalf("LoadFile() error = %v, want nil", err)
 		}
@@ -146,7 +146,7 @@ func TestDotEnvFileSourceLoadFile(t *testing.T) {
 			t.Fatalf("WriteFile() error = %v", err)
 		}
 
-		source := NewDotEnvFileSource(path, "")
+		source := NewDotEnvFileSource(path, "", "")
 		err := source.LoadFile(&schema.Schema{})
 		if err == nil {
 			t.Fatalf("LoadFile() error = nil, want parse error")
@@ -178,7 +178,7 @@ func TestDotEnvFileSourceLoadFile(t *testing.T) {
 			},
 		}
 
-		source := NewDotEnvFileSource(path, "")
+		source := NewDotEnvFileSource(path, "", "")
 		err := source.LoadFile(sc)
 		if err == nil {
 			t.Fatalf("LoadFile() error = nil, want decode error")
@@ -188,6 +188,37 @@ func TestDotEnvFileSourceLoadFile(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), `env "DEBUG" -> Debug`) {
 			t.Fatalf("LoadFile() error = %q, want env decode context", err.Error())
+		}
+	})
+
+	t.Run("loads prefixed values from .env file", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, ".env")
+		if err := os.WriteFile(path, []byte("APP_PORT=8181\n"), 0o600); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+
+		port := 0
+		sc := &schema.Schema{
+			Fields: []schema.Field{
+				{
+					Path:    "Port",
+					EnvName: "PORT",
+					Type:    reflect.TypeOf(0),
+					Value:   reflect.ValueOf(&port).Elem(),
+				},
+			},
+		}
+
+		source := NewDotEnvFileSource(path, "", "APP_")
+		if err := source.LoadFile(sc); err != nil {
+			t.Fatalf("LoadFile() error = %v, want nil", err)
+		}
+		if port != 8181 {
+			t.Fatalf("Port = %d, want 8181", port)
+		}
+		if got := sc.Fields[0].Source; got != path+":APP_PORT" {
+			t.Fatalf("source = %q, want %q", got, path+":APP_PORT")
 		}
 	})
 }

@@ -11,10 +11,14 @@ import (
 )
 
 func Load(sc *schema.Schema) error {
-	return loadWithLookup(sc, os.LookupEnv, "env")
+	return LoadWithPrefix(sc, "")
 }
 
-func loadWithLookup(sc *schema.Schema, lookup func(string) (string, bool), sourcePrefix string) error {
+func LoadWithPrefix(sc *schema.Schema, prefix string) error {
+	return loadWithLookup(sc, os.LookupEnv, "env", prefix)
+}
+
+func loadWithLookup(sc *schema.Schema, lookup func(string) (string, bool), sourcePrefix string, envPrefix string) error {
 	if sc == nil {
 		return errs.InvalidSchemaNil
 	}
@@ -27,18 +31,19 @@ func loadWithLookup(sc *schema.Schema, lookup func(string) (string, bool), sourc
 		if envName == "" {
 			continue
 		}
+		lookupName := envPrefix + envName
 
-		raw, ok := lookup(envName)
+		raw, ok := lookup(lookupName)
 		if !ok {
 			continue
 		}
 
 		if err := decode.SetFieldValue(field, raw); err != nil {
-			ctx := fmt.Sprintf("env %q -> %s", envName, field.Path)
+			ctx := fmt.Sprintf("env %q -> %s", lookupName, field.Path)
 			fieldErrors = append(fieldErrors, errs.WrapDecode(errs.Decode, ctx, err))
 			continue
 		}
-		sc.Fields[i].Source = sourcePrefix + ":" + envName
+		sc.Fields[i].Source = sourcePrefix + ":" + lookupName
 	}
 
 	if len(fieldErrors) > 0 {
