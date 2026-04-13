@@ -48,9 +48,10 @@ jobs:
         if: matrix.go-version == 'stable'
         run: go test -coverprofile=coverage.out ./...
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage reports to Codecov
         if: matrix.go-version == 'stable'
         uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.out
           fail_ci_if_error: false
