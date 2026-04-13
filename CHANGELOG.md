@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.4.0 - 2026-04-13
+
+
+
+### Documentation
+
+- Update changelog for v0.3.1 [skip ci] [skip codeql]
+
+- Add godoc for each public api
+
+- Improve documentation and add version file
+
+
+### Features
+
+- Add new validators
+
+- Add a possibility for byte loads
+
+- Add .env file support
+
+- Add env prefix support
+
+- Add custom validators
+
+
+### Refactoring
+
+- Rename error,warn,off modes to inlclude Mode prefix
+
+
 ## v0.3.1 - 2026-04-08
 
 
