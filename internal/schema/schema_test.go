@@ -188,3 +188,56 @@ func TestIsZeroValue(t *testing.T) {
 		})
 	}
 }
+
+func TestParseValidateTag(t *testing.T) {
+	t.Run("empty tag returns nil", func(t *testing.T) {
+		got, err := parseValidateTag("Field", "", nil)
+		if err != nil {
+			t.Fatalf("parseValidateTag() error = %v, want nil", err)
+		}
+		if got != nil {
+			t.Fatalf("parseValidateTag() = %#v, want nil", got)
+		}
+	})
+
+	t.Run("skips blank parts and blank keys", func(t *testing.T) {
+		got, err := parseValidateTag("Field", " , =x , required , min= 2 ", func(string) bool { return true })
+		if err != nil {
+			t.Fatalf("parseValidateTag() error = %v, want nil", err)
+		}
+		if got["required"] != "" || got["min"] != "2" || len(got) != 2 {
+			t.Fatalf("parseValidateTag() = %#v, want required and min=2", got)
+		}
+	})
+
+	t.Run("non-empty tag with no valid rules returns nil", func(t *testing.T) {
+		got, err := parseValidateTag("Field", " , =x ,   ", func(string) bool { return true })
+		if err != nil {
+			t.Fatalf("parseValidateTag() error = %v, want nil", err)
+		}
+		if got != nil {
+			t.Fatalf("parseValidateTag() = %#v, want nil", got)
+		}
+	})
+}
+
+func TestCollectFieldsNestedErrorPropagation(t *testing.T) {
+	type nested struct {
+		Port int `validate:"unknownrule=1"`
+	}
+	type cfg struct {
+		Nested nested
+	}
+
+	v := reflect.ValueOf(&cfg{}).Elem()
+	fields := make([]Field, 0)
+	err := collectFields(v, v.Type(), "", &fields, func(name string) bool {
+		return name != "unknownrule"
+	})
+	if err == nil {
+		t.Fatalf("collectFields() error = nil, want invalid schema error")
+	}
+	if !errors.Is(err, errs.InvalidSchema) {
+		t.Fatalf("collectFields() error = %v, want wrapped %v", err, errs.InvalidSchema)
+	}
+}

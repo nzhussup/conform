@@ -19,6 +19,14 @@ func TestSuggestPathUnit(t *testing.T) {
 			wantOK: false,
 		},
 		{
+			name:        "empty candidate key returns no suggestion",
+			unknownPath: "server.port",
+			candidates: map[string]struct{}{
+				"": {},
+			},
+			wantOK: false,
+		},
+		{
 			name:        "empty candidates",
 			unknownPath: "server.port",
 			candidates:  map[string]struct{}{},
@@ -39,6 +47,14 @@ func TestSuggestPathUnit(t *testing.T) {
 			unknownPath: "a",
 			candidates: map[string]struct{}{
 				"zzzz": {},
+			},
+			wantOK: false,
+		},
+		{
+			name:        "max distance cap still applies for long strings",
+			unknownPath: "this.is.a.very.long.unknown.path",
+			candidates: map[string]struct{}{
+				"x": {},
 			},
 			wantOK: false,
 		},
@@ -79,6 +95,8 @@ func TestLevenshteinDistance(t *testing.T) {
 		{name: "single insertion", left: "port", right: "ports", want: 1},
 		{name: "single deletion", left: "ports", right: "port", want: 1},
 		{name: "unicode runes", left: "päth", right: "path", want: 1},
+		{name: "left empty", left: "", right: "path", want: 4},
+		{name: "right empty", left: "path", right: "", want: 4},
 	}
 
 	for _, tt := range tests {

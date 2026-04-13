@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -358,6 +359,13 @@ func TestDecodeHelpers(t *testing.T) {
 		_, ok, err := toInt64FromNumeric(uint64(math.MaxInt64)+1, errs.DecodeInvalidInt, "int")
 		if !ok || err == nil || !errors.Is(err, errs.DecodeInvalidInt) {
 			t.Fatalf("uint64 overflow = (ok=%v, err=%v), want wrapped %v", ok, err, errs.DecodeInvalidInt)
+		}
+
+		if strconv.IntSize == 64 {
+			_, ok, err = toInt64FromNumeric(uint(math.MaxUint64), errs.DecodeInvalidInt, "int")
+			if !ok || err == nil || !errors.Is(err, errs.DecodeInvalidInt) {
+				t.Fatalf("uint overflow = (ok=%v, err=%v), want wrapped %v", ok, err, errs.DecodeInvalidInt)
+			}
 		}
 
 		_, ok, err = toInt64FromNumeric(float64(math.MaxInt64)*2, errs.DecodeInvalidInt, "int")

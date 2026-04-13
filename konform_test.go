@@ -233,6 +233,48 @@ func TestLoadReportsMultipleDecodeErrorsFromFile(t *testing.T) {
 	}
 }
 
+func TestLoadReturnsReportWhenDefaultDecodeFails(t *testing.T) {
+	type config struct {
+		Port int `default:"not-int"`
+	}
+
+	cfg := &config{}
+	report, err := Load(cfg)
+	if err == nil {
+		t.Fatalf("Load() error = nil, want decode error")
+	}
+	if !errors.Is(err, ErrDecode) {
+		t.Fatalf("Load() error = %v, want wrapped %v", err, ErrDecode)
+	}
+	if report == nil {
+		t.Fatalf("Load() report = nil, want non-nil")
+	}
+}
+
+func TestLoadReturnsReportWhenValidationEngineErrors(t *testing.T) {
+	type config struct {
+		Name string
+	}
+
+	cfg := &config{}
+	report, err := Load(cfg, optionWithSource(func(sc *internalschema.Schema) error {
+		if len(sc.Fields) == 0 {
+			t.Fatalf("schema has no fields")
+		}
+		sc.Fields[0].Validations = map[string]string{"unsupported_rule": "1"}
+		return nil
+	}))
+	if err == nil {
+		t.Fatalf("Load() error = nil, want validation engine error")
+	}
+	if !strings.Contains(err.Error(), `unsupported validate rule "unsupported_rule"`) {
+		t.Fatalf("Load() error = %q, want unsupported rule details", err.Error())
+	}
+	if report == nil {
+		t.Fatalf("Load() report = nil, want non-nil")
+	}
+}
+
 func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 	type config struct {
 		AppName string `validate:"required"`

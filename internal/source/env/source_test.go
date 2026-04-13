@@ -225,3 +225,24 @@ func TestLoadWithPrefix(t *testing.T) {
 		t.Fatalf("source = %q, want %q", got, "env:APP_PORT")
 	}
 }
+
+func TestLoadSkipsFieldsWithoutEnvName(t *testing.T) {
+	value := "unchanged"
+	sc := &schema.Schema{
+		Fields: []schema.Field{
+			{
+				Path:    "Value",
+				EnvName: "",
+				Type:    reflect.TypeOf(""),
+				Value:   reflect.ValueOf(&value).Elem(),
+			},
+		},
+	}
+
+	if err := Load(sc); err != nil {
+		t.Fatalf("Load() error = %v, want nil", err)
+	}
+	if value != "unchanged" {
+		t.Fatalf("Value = %q, want unchanged", value)
+	}
+}

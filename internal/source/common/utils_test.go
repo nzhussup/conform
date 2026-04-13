@@ -129,6 +129,16 @@ func TestResolveLookupPath(t *testing.T) {
 			pathAliases: map[string]string{},
 			want:        "Server.Port",
 		},
+		{
+			name: "full path alias replaces whole path",
+			field: schema.Field{
+				Path: "Server.Port",
+			},
+			pathAliases: map[string]string{
+				"Server.Port": "server_port",
+			},
+			want: "server_port",
+		},
 	}
 
 	for _, tt := range tests {

@@ -504,6 +504,18 @@ func TestBytesOptions(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:   "bytes source uses strict unknown-key mode when strict is enabled",
+			option: FromJSONBytes,
+			data:   []byte(`{"unexpected":"1"}`),
+			validate: func(t *testing.T, o *loadOptions, sc *schema.Schema) {
+				t.Helper()
+				o.strict = true
+				if err := o.sources[0](sc); err == nil {
+					t.Fatalf("source() error = nil, want decode error")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {

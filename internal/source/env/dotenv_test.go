@@ -31,10 +31,31 @@ func TestDotEnvParsingHelpers(t *testing.T) {
 		}
 	})
 
+	t.Run("parseSingleQuotedDotEnvValue invalid trailing", func(t *testing.T) {
+		_, err := parseSingleQuotedDotEnvValue("'abc' trailing", 2)
+		if err == nil || !strings.Contains(err.Error(), "invalid trailing characters") {
+			t.Fatalf("parseSingleQuotedDotEnvValue() error = %v, want invalid trailing characters", err)
+		}
+	})
+
 	t.Run("parseDoubleQuotedDotEnvValue invalid escape", func(t *testing.T) {
 		_, err := parseDoubleQuotedDotEnvValue(`"\xZZ"`, 3)
 		if err == nil || !strings.Contains(err.Error(), "invalid quoted value") {
 			t.Fatalf("parseDoubleQuotedDotEnvValue() error = %v, want invalid quoted value", err)
+		}
+	})
+
+	t.Run("parseDoubleQuotedDotEnvValue unterminated", func(t *testing.T) {
+		_, err := parseDoubleQuotedDotEnvValue(`"unterminated`, 3)
+		if err == nil || !strings.Contains(err.Error(), "unterminated quoted value") {
+			t.Fatalf("parseDoubleQuotedDotEnvValue() error = %v, want unterminated quoted value", err)
+		}
+	})
+
+	t.Run("parseDoubleQuotedDotEnvValue invalid trailing", func(t *testing.T) {
+		_, err := parseDoubleQuotedDotEnvValue(`"abc" trailing`, 3)
+		if err == nil || !strings.Contains(err.Error(), "invalid trailing characters") {
+			t.Fatalf("parseDoubleQuotedDotEnvValue() error = %v, want invalid trailing characters", err)
 		}
 	})
 
@@ -56,6 +77,28 @@ func TestDotEnvParsingHelpers(t *testing.T) {
 			t.Fatalf("APP_NAME = %q, want %q", got, "konform")
 		}
 	})
+
+	t.Run("parseDotEnv rejects empty key", func(t *testing.T) {
+		_, err := parseDotEnv([]byte(" =value\n"))
+		if err == nil || !strings.Contains(err.Error(), "key must not be empty") {
+			t.Fatalf("parseDotEnv() error = %v, want key must not be empty", err)
+		}
+	})
+
+	t.Run("parseDotEnv propagates quoted value parse errors", func(t *testing.T) {
+		_, err := parseDotEnv([]byte("APP='value' trailing\n"))
+		if err == nil || !strings.Contains(err.Error(), "invalid trailing characters") {
+			t.Fatalf("parseDotEnv() error = %v, want invalid trailing characters", err)
+		}
+	})
+
+	t.Run("parseDotEnv scanner too long line", func(t *testing.T) {
+		long := "KEY=" + strings.Repeat("a", 1024*1024+1) + "\n"
+		_, err := parseDotEnv([]byte(long))
+		if err == nil {
+			t.Fatalf("parseDotEnv() error = nil, want scanner error")
+		}
+	})
 }
 
 func TestDotEnvFileSourceLoadFile(t *testing.T) {
@@ -64,12 +107,50 @@ func TestDotEnvFileSourceLoadFile(t *testing.T) {
 		path := filepath.Join(dir, ".env")
 		if err := os.WriteFile(path, []byte("PORT=1\n"), 0o600); err != nil {
 			t.Fatalf("WriteFile() error = %v", err)
+
+			t.Run("parseDotEnv rejects empty key", func(t *testing.T) {
+				_, err := parseDotEnv([]byte(" =value\n"))
+				if err == nil || !strings.Contains(err.Error(), "key must not be empty") {
+					t.Fatalf("parseDotEnv() error = %v, want key must not be empty", err)
+				}
+			})
+
+			t.Run("quoted value rejects invalid trailing characters", func(t *testing.T) {
+				_, err := parseSingleQuotedDotEnvValue("'abc' trailing", 5)
+				if err == nil {
+					t.Fatalf("parseSingleQuotedDotEnvValue() error = nil, want error")
+				}
+
+				_, err = parseDoubleQuotedDotEnvValue(`"abc" trailing`, 6)
+				if err == nil {
+					t.Fatalf("parseDoubleQuotedDotEnvValue() error = nil, want error")
+				}
+			})
+
+			t.Run("parseDotEnv scanner too long line", func(t *testing.T) {
+				long := "KEY=" + strings.Repeat("a", 1024*1024+1) + "\n"
+				_, err := parseDotEnv([]byte(long))
+				if err == nil {
+					t.Fatalf("parseDotEnv() error = nil, want scanner error")
+				}
+			})
 		}
 
 		source := NewDotEnvFileSource(path, "", "")
 		err := source.LoadFile(nil)
 		if !errors.Is(err, errs.InvalidSchemaNil) {
 			t.Fatalf("LoadFile() error = %v, want wrapped %v", err, errs.InvalidSchemaNil)
+		}
+	})
+
+	t.Run("read error when file is missing", func(t *testing.T) {
+		source := NewDotEnvFileSource(filepath.Join(t.TempDir(), "missing.env"), "", "")
+		err := source.LoadFile(&schema.Schema{})
+		if err == nil {
+			t.Fatalf("LoadFile() error = nil, want read error")
+		}
+		if !errors.Is(err, errs.DecodeSourceRead) {
+			t.Fatalf("LoadFile() error = %v, want wrapped %v", err, errs.DecodeSourceRead)
 		}
 	})
 

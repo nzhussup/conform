@@ -85,8 +85,22 @@ func TestUrl(t *testing.T) {
 			wantLike:    "allowed schemes [http https]",
 		},
 		{
+			name:        "relative path is rejected as non-absolute url",
+			field:       makeStringField("URL", "/relative/path", map[string]string{"url": ""}),
+			wantTotal:   1,
+			wantErrType: errs.ValidationURL,
+			wantLike:    "allowed schemes [http https]",
+		},
+		{
 			name:        "invalid url syntax is rejected",
 			field:       makeStringField("URL", "htp:/invalid-url", map[string]string{"url": ""}),
+			wantTotal:   1,
+			wantErrType: errs.ValidationURL,
+			wantLike:    "invalid URL format",
+		},
+		{
+			name:        "invalid url parse error is rejected",
+			field:       makeStringField("URL", "http://[::1", map[string]string{"url": ""}),
 			wantTotal:   1,
 			wantErrType: errs.ValidationURL,
 			wantLike:    "invalid URL format",
