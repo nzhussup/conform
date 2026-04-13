@@ -262,7 +262,7 @@ func TestWithCustomValidator(t *testing.T) {
 
 func TestUnknownKeySuggestionOptions(t *testing.T) {
 	t.Run("nil load options", func(t *testing.T) {
-		err := WithUnknownKeySuggestionMode(Off)(nil)
+		err := WithUnknownKeySuggestionMode(ModeOff)(nil)
 		if !errors.Is(err, errs.InvalidSchemaNilOptions) {
 			t.Fatalf("WithUnknownKeySuggestionMode(nil) error = %v, want %v", err, errs.InvalidSchemaNilOptions)
 		}
@@ -270,28 +270,28 @@ func TestUnknownKeySuggestionOptions(t *testing.T) {
 
 	t.Run("sets explicit error mode", func(t *testing.T) {
 		o := &loadOptions{}
-		if err := WithUnknownKeySuggestionMode(Error)(o); err != nil {
+		if err := WithUnknownKeySuggestionMode(ModeError)(o); err != nil {
 			t.Fatalf("WithUnknownKeySuggestionMode() error = %v, want nil", err)
 		}
-		if o.unknownKeySuggestMode != Error {
-			t.Fatalf("unknownKeySuggestMode = %v, want %v", o.unknownKeySuggestMode, Error)
+		if o.unknownKeySuggestMode != ModeError {
+			t.Fatalf("unknownKeySuggestMode = %v, want %v", o.unknownKeySuggestMode, ModeError)
 		}
 	})
 
 	t.Run("sets explicit off mode", func(t *testing.T) {
 		o := &loadOptions{}
-		if err := WithUnknownKeySuggestionMode(Off)(o); err != nil {
+		if err := WithUnknownKeySuggestionMode(ModeOff)(o); err != nil {
 			t.Fatalf("WithUnknownKeySuggestionMode() error = %v, want nil", err)
 		}
-		if o.unknownKeySuggestMode != Off {
-			t.Fatalf("unknownKeySuggestMode = %v, want %v", o.unknownKeySuggestMode, Off)
+		if o.unknownKeySuggestMode != ModeOff {
+			t.Fatalf("unknownKeySuggestMode = %v, want %v", o.unknownKeySuggestMode, ModeOff)
 		}
 	})
 
 	t.Run("default zero-value mode is warn", func(t *testing.T) {
 		o := &loadOptions{}
-		if o.unknownKeySuggestMode != Warn {
-			t.Fatalf("unknownKeySuggestMode = %v, want %v", o.unknownKeySuggestMode, Warn)
+		if o.unknownKeySuggestMode != ModeWarn {
+			t.Fatalf("unknownKeySuggestMode = %v, want %v", o.unknownKeySuggestMode, ModeWarn)
 		}
 	})
 }

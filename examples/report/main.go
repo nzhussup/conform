@@ -26,7 +26,7 @@ func main() {
 	report, err := konform.Load(&cfg,
 		konform.FromJSONFile("config.json"),
 		konform.FromYAMLFile("config.yaml"),
-		konform.WithUnknownKeySuggestionMode(konform.Off),
+		konform.WithUnknownKeySuggestionMode(konform.ModeOff),
 	)
 	if err != nil {
 		log.Fatal(err)

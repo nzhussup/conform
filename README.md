@@ -29,7 +29,7 @@ It is optimized for strict, typed, schema-first loading with explainable outcome
 | Capability | Konform | Viper | Koanf |
 |---|---|---|---|
 | Schema-first from Go structs | Strong default | Possible, but often extra wiring | Possible, often parser/provider composition |
-| Strict unknown-key handling with suggestions | Built-in (`Warn` / `Error` / `Off`) | Usually custom validation needed | Usually custom validation needed |
+| Strict unknown-key handling with suggestions | Built-in (`ModeWarn` / `ModeError` / `ModeOff`) | Usually custom validation needed | Usually custom validation needed |
 | Built-in load explainability report | Built-in (`LoadReport`) | Not a core built-in concept | Not a core built-in concept |
 | Strict mapping conflict checks (`key`/`env`) | Built-in (`Strict`) | Usually manual | Usually manual |
 | Secret masking in report | Built-in (`secret` tag) | Usually manual | Usually manual |
@@ -46,7 +46,7 @@ Use Viper/Koanf when you need broader provider ecosystems, dynamic config workfl
 - Validation rules (`required`, `min`, `max`, `len`, `minlen`, `maxlen`, `regex`, `oneof`, `nonzero`, `url`, `email`)
 - Custom validators via `konform.WithCustomValidator(...)`
 - Strict mode (`konform.Strict()`) for unknown structured keys and mapping conflicts
-- Unknown-key handling modes: `konform.Warn`, `konform.Error`, `konform.Off`
+- Unknown-key handling modes: `konform.ModeWarn`, `konform.ModeError`, `konform.ModeOff`
 - Load report with field values and value sources
 - Secret masking in reports using `secret:"true"`
 - Nested struct support
@@ -94,7 +94,7 @@ func main() {
 		konform.FromDotEnvFile(".env"),
 		konform.FromEnv(),
 		konform.WithEnvPrefix("APP_"),
-		konform.WithUnknownKeySuggestionMode(konform.Warn),
+		konform.WithUnknownKeySuggestionMode(konform.ModeWarn),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -136,14 +136,14 @@ Use `konform.Strict()` to enforce:
 
 ## Unknown key modes
 
-- `konform.Warn` (default): print warning, continue load
-- `konform.Error`: return decode error
-- `konform.Off`: ignore unknown keys
+- `konform.ModeWarn` (default): print warning, continue load
+- `konform.ModeError`: return decode error
+- `konform.ModeOff`: ignore unknown keys
 
 Set mode with:
 
 ```go
-konform.WithUnknownKeySuggestionMode(konform.Error)
+konform.WithUnknownKeySuggestionMode(konform.ModeError)
 ```
 
 ## Load report

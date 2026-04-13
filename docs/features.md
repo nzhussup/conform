@@ -42,9 +42,9 @@ Common rules include:
 
 Set with `WithUnknownKeySuggestionMode`:
 
-- `konform.Warn` (default): warning, no error
-- `konform.Error`: decode error
-- `konform.Off`: ignore
+- `konform.ModeWarn` (default): warning, no error
+- `konform.ModeError`: decode error
+- `konform.ModeOff`: ignore
 
 Suggestions are schema-first:
 

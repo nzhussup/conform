@@ -266,7 +266,7 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 
 	t.Run("error mode reports unexpected input key with schema suggestion", func(t *testing.T) {
 		cfg := &config{}
-		_, err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(Error))
+		_, err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(ModeError))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want decode error")
 		}
@@ -284,7 +284,7 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 	t.Run("off mode ignores unknown keys and falls through to validation", func(t *testing.T) {
 		cfg := &config{}
 		stderr := captureStderr(t, func() {
-			_, err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(Off))
+			_, err := Load(cfg, FromJSONFile(path), WithUnknownKeySuggestionMode(ModeOff))
 			if err == nil {
 				t.Fatalf("Load() error = nil, want validation error")
 			}
@@ -299,7 +299,7 @@ func TestLoadUnknownKeySuggestionMode(t *testing.T) {
 
 	t.Run("off mode works even when option is set before source", func(t *testing.T) {
 		cfg := &config{}
-		_, err := Load(cfg, WithUnknownKeySuggestionMode(Off), FromJSONFile(path))
+		_, err := Load(cfg, WithUnknownKeySuggestionMode(ModeOff), FromJSONFile(path))
 		if err == nil {
 			t.Fatalf("Load() error = nil, want validation error")
 		}

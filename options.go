@@ -33,12 +33,12 @@ type loadOptions struct {
 type UnknownKeySuggestionMode = common.UnknownKeySuggestionMode
 
 const (
-	// Warn prints a warning for unknown keys and continues.
-	Warn UnknownKeySuggestionMode = common.UnknownKeySuggestionWarn
-	// Error returns a decode error for unknown keys.
-	Error UnknownKeySuggestionMode = common.UnknownKeySuggestionError
-	// Off ignores unknown keys.
-	Off UnknownKeySuggestionMode = common.UnknownKeySuggestionOff
+	// ModeWarn prints a warning for unknown keys and continues.
+	ModeWarn UnknownKeySuggestionMode = common.UnknownKeySuggestionWarn
+	// ModeError returns a decode error for unknown keys.
+	ModeError UnknownKeySuggestionMode = common.UnknownKeySuggestionError
+	// ModeOff ignores unknown keys.
+	ModeOff UnknownKeySuggestionMode = common.UnknownKeySuggestionOff
 )
 
 type fileSourceFactory func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode, o *loadOptions) sourceLoader

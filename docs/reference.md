@@ -26,9 +26,9 @@ func Load(target any, opts ...Option) (*LoadReport, error)
 
 ## UnknownKeySuggestionMode
 
-- `konform.Warn`
-- `konform.Error`
-- `konform.Off`
+- `konform.ModeWarn`
+- `konform.ModeError`
+- `konform.ModeOff`
 
 ## Errors
 
