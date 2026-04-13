@@ -120,7 +120,7 @@ func TestValidate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sc := tt.schemaBuilder()
-			results, err := Validate(sc)
+			results, err := Validate(sc, rules.Registry)
 
 			if tt.wantErrType != nil {
 				if err == nil {
@@ -204,7 +204,7 @@ func TestValidateDispatchesOnlyDeclaredRules(t *testing.T) {
 		},
 	}
 
-	results, err := Validate(sc)
+	results, err := Validate(sc, rules.Registry)
 	if err != nil {
 		t.Fatalf("Validate() error = %v, want nil", err)
 	}

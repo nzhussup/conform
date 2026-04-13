@@ -1,14 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/nzhussup/konform"
 )
 
 type Config struct {
 	AppName     string `validate:"required,min=3,max=100"`
+	ServiceID   string `validate:"required,startswith=svc-"`
 	Version     string `validate:"required"`
 	Description string `validate:"required,maxlen=10"`
 	Database    struct {
@@ -36,7 +39,22 @@ type Config struct {
 func main() {
 	cfg := Config{}
 
-	if _, err := konform.Load(&cfg, konform.FromJSONFile("config.json")); err != nil {
+	startsWith := func(value any, ruleValue string) error {
+		raw, ok := value.(string)
+		if !ok {
+			return errors.New("expected string value")
+		}
+		if !strings.HasPrefix(raw, ruleValue) {
+			return fmt.Errorf("must start with %q", ruleValue)
+		}
+		return nil
+	}
+
+	if _, err := konform.Load(
+		&cfg,
+		konform.FromJSONFile("config.json"),
+		konform.WithCustomValidator("startswith", startsWith),
+	); err != nil {
 		log.Fatal(err)
 	}
 

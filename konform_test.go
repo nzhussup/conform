@@ -156,6 +156,45 @@ func TestLoadSuccessWithEnvPrefix(t *testing.T) {
 	}
 }
 
+func TestLoadWithCustomValidator(t *testing.T) {
+	type config struct {
+		Name string `validate:"startswith=svc-"`
+	}
+
+	isStartsWith := func(value any, ruleValue string) error {
+		raw, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("expected string")
+		}
+		if !strings.HasPrefix(raw, ruleValue) {
+			return fmt.Errorf("must start with %q", ruleValue)
+		}
+		return nil
+	}
+
+	t.Run("passes custom validator", func(t *testing.T) {
+		cfg := &config{Name: "svc-api"}
+		_, err := Load(cfg, WithCustomValidator("startswith", isStartsWith))
+		if err != nil {
+			t.Fatalf("Load() error = %v, want nil", err)
+		}
+	})
+
+	t.Run("fails custom validator", func(t *testing.T) {
+		cfg := &config{Name: "api"}
+		_, err := Load(cfg, WithCustomValidator("startswith", isStartsWith))
+		if err == nil {
+			t.Fatalf("Load() error = nil, want validation error")
+		}
+		if !errors.Is(err, ErrValidation) {
+			t.Fatalf("Load() error = %v, want wrapped %v", err, ErrValidation)
+		}
+		if !strings.Contains(err.Error(), `Name: must start with "svc-"`) {
+			t.Fatalf("Load() error = %q, want custom validation message", err.Error())
+		}
+	})
+}
+
 func TestLoadReportsMultipleDecodeErrorsFromFile(t *testing.T) {
 	type config struct {
 		Name  string `key:"name"`

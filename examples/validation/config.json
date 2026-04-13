@@ -1,5 +1,6 @@
 {
     "AppName": "Validation Example",
+    "ServiceID": "api-service",
     "Version": "1.0.0",
     "Description": "An example configuration for validation",
     "Database": {

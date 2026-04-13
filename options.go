@@ -1,8 +1,10 @@
 package konform
 
 import (
+	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/nzhussup/konform/internal/errs"
 	internalschema "github.com/nzhussup/konform/internal/schema"
@@ -22,6 +24,7 @@ type loadOptions struct {
 	sources               []sourceLoader
 	unknownKeySuggestMode common.UnknownKeySuggestionMode
 	envPrefix             string
+	customValidators      map[string]CustomValidatorFunc
 	strict                bool
 }
 
@@ -33,8 +36,10 @@ const (
 	Off   UnknownKeySuggestionMode = common.UnknownKeySuggestionOff
 )
 
-type fileSourceFactory func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode) sourceLoader
+type fileSourceFactory func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode, o *loadOptions) sourceLoader
 type bytesSourceFactory func(data []byte, suggestionMode common.UnknownKeySuggestionMode) sourceLoader
+
+type CustomValidatorFunc func(value any, ruleValue string) error
 
 func FromEnv() Option {
 	return func(o *loadOptions) error {
@@ -50,42 +55,28 @@ func FromEnv() Option {
 }
 
 func FromDotEnvFile(path string) Option {
-	if path == "" {
-		return func(o *loadOptions) error {
-			return errs.InvalidSchemaEmptyDotEnv
-		}
-	}
-
-	callerDir := callerDirectory(3)
-	return func(o *loadOptions) error {
-		if o == nil {
-			return errs.InvalidSchemaNilOptions
-		}
-
-		o.sources = append(o.sources, func(sc *internalschema.Schema) error {
-			source := envsource.NewDotEnvFileSource(path, callerDir, o.envPrefix)
-			return source.LoadFile(sc)
-		})
-		return nil
-	}
+	return fromFile(path, errs.InvalidSchemaEmptyDotEnv, func(path string, callerDir string, _ common.UnknownKeySuggestionMode, o *loadOptions) sourceLoader {
+		source := envsource.NewDotEnvFileSource(path, callerDir, o.envPrefix)
+		return source.LoadFile
+	})
 }
 
 func FromYAMLFile(path string) Option {
-	return fromFile(path, errs.InvalidSchemaEmptyYAML, func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode) sourceLoader {
+	return fromFile(path, errs.InvalidSchemaEmptyYAML, func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode, _ *loadOptions) sourceLoader {
 		source := yamlsource.NewFileSource(path, callerDir, suggestionMode)
 		return source.LoadFile
 	})
 }
 
 func FromJSONFile(path string) Option {
-	return fromFile(path, errs.InvalidSchemaEmptyJSON, func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode) sourceLoader {
+	return fromFile(path, errs.InvalidSchemaEmptyJSON, func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode, _ *loadOptions) sourceLoader {
 		source := jsonsource.NewFileSource(path, callerDir, suggestionMode)
 		return source.LoadFile
 	})
 }
 
 func FromTOMLFile(path string) Option {
-	return fromFile(path, errs.InvalidSchemaEmptyTOML, func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode) sourceLoader {
+	return fromFile(path, errs.InvalidSchemaEmptyTOML, func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode, _ *loadOptions) sourceLoader {
 		source := tomlsource.NewFileSource(path, callerDir, suggestionMode)
 		return source.LoadFile
 	})
@@ -130,7 +121,7 @@ func fromFile(path string, emptyPathErr error, factory fileSourceFactory) Option
 			if o.strict {
 				mode = common.UnknownKeySuggestionError
 			}
-			load := factory(path, callerDir, mode)
+			load := factory(path, callerDir, mode, o)
 			return load(sc)
 		})
 		return nil
@@ -193,6 +184,32 @@ func WithEnvPrefix(prefix string) Option {
 		}
 
 		o.envPrefix = prefix
+		return nil
+	}
+}
+
+func WithCustomValidator(name string, fn CustomValidatorFunc) Option {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return func(o *loadOptions) error {
+			return fmt.Errorf("%w: custom validator name must not be empty", errs.InvalidSchema)
+		}
+	}
+	if fn == nil {
+		return func(o *loadOptions) error {
+			return fmt.Errorf("%w: custom validator %q must not be nil", errs.InvalidSchema, name)
+		}
+	}
+
+	return func(o *loadOptions) error {
+		if o == nil {
+			return errs.InvalidSchemaNilOptions
+		}
+
+		if o.customValidators == nil {
+			o.customValidators = make(map[string]CustomValidatorFunc)
+		}
+		o.customValidators[name] = fn
 		return nil
 	}
 }

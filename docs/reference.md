@@ -20,6 +20,7 @@ func Load(target any, opts ...Option) (*LoadReport, error)
 - `FromTOMLBytes(data []byte)`
 - `FromEnv()`
 - `WithEnvPrefix(prefix string)`
+- `WithCustomValidator(name string, fn CustomValidatorFunc)`
 - `WithUnknownKeySuggestionMode(mode UnknownKeySuggestionMode)`
 - `Strict()`
 

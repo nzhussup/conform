@@ -219,6 +219,47 @@ func TestWithEnvPrefix(t *testing.T) {
 	})
 }
 
+func TestWithCustomValidator(t *testing.T) {
+	t.Run("nil load options", func(t *testing.T) {
+		err := WithCustomValidator("custom", func(_ any, _ string) error { return nil })(nil)
+		if !errors.Is(err, errs.InvalidSchemaNilOptions) {
+			t.Fatalf("WithCustomValidator(nil) error = %v, want %v", err, errs.InvalidSchemaNilOptions)
+		}
+	})
+
+	t.Run("empty name", func(t *testing.T) {
+		err := WithCustomValidator("", func(_ any, _ string) error { return nil })(&loadOptions{})
+		if !errors.Is(err, errs.InvalidSchema) {
+			t.Fatalf("WithCustomValidator(empty) error = %v, want wrapped %v", err, errs.InvalidSchema)
+		}
+	})
+
+	t.Run("nil function", func(t *testing.T) {
+		err := WithCustomValidator("custom", nil)(&loadOptions{})
+		if !errors.Is(err, errs.InvalidSchema) {
+			t.Fatalf("WithCustomValidator(nil fn) error = %v, want wrapped %v", err, errs.InvalidSchema)
+		}
+	})
+
+	t.Run("registers validator", func(t *testing.T) {
+		o := &loadOptions{}
+		validator := func(_ any, _ string) error { return nil }
+		if err := WithCustomValidator("custom", validator)(o); err != nil {
+			t.Fatalf("WithCustomValidator() error = %v, want nil", err)
+		}
+		if o.customValidators == nil {
+			t.Fatalf("customValidators = nil, want map")
+		}
+		got, ok := o.customValidators["custom"]
+		if !ok {
+			t.Fatalf("customValidators missing %q", "custom")
+		}
+		if reflect.ValueOf(got).Pointer() != reflect.ValueOf(validator).Pointer() {
+			t.Fatalf("registered validator function does not match input function")
+		}
+	})
+}
+
 func TestUnknownKeySuggestionOptions(t *testing.T) {
 	t.Run("nil load options", func(t *testing.T) {
 		err := WithUnknownKeySuggestionMode(Off)(nil)

@@ -6,11 +6,10 @@ import (
 
 	"github.com/nzhussup/konform/internal/errs"
 	"github.com/nzhussup/konform/internal/schema"
-	"github.com/nzhussup/konform/internal/validate/rules"
 	"github.com/nzhussup/konform/internal/validate/types"
 )
 
-func Validate(sc *schema.Schema) ([]types.ValidationResult, error) {
+func Validate(sc *schema.Schema, registry map[string]types.ValidationFunc) ([]types.ValidationResult, error) {
 	if sc == nil {
 		return nil, errs.InvalidSchemaNil
 	}
@@ -28,7 +27,7 @@ func Validate(sc *schema.Schema) ([]types.ValidationResult, error) {
 		sort.Strings(ruleNames)
 
 		for _, ruleName := range ruleNames {
-			validator, ok := rules.Registry[ruleName]
+			validator, ok := registry[ruleName]
 			if !ok {
 				return nil, fmt.Errorf("%w: unsupported validate rule %q for field %q", errs.InvalidSchema, ruleName, f.Path)
 			}

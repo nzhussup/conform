@@ -13,7 +13,12 @@ import (
 type Field = schematypes.Field
 type Schema = schematypes.Schema
 
-func Build(target any) (*Schema, error) {
+func Build(target any, isSupportedRule ...func(string) bool) (*Schema, error) {
+	supportedRule := rules.IsSupported
+	if len(isSupportedRule) > 0 && isSupportedRule[0] != nil {
+		supportedRule = isSupportedRule[0]
+	}
+
 	v := reflect.ValueOf(target)
 	if !v.IsValid() || v.Kind() != reflect.Pointer || v.IsNil() {
 		return nil, fmt.Errorf("%w: target must be a non-nil pointer to a struct", errs.InvalidTarget)
@@ -25,7 +30,7 @@ func Build(target any) (*Schema, error) {
 	}
 
 	s := &Schema{}
-	if err := collectFields(v, v.Type(), "", &s.Fields); err != nil {
+	if err := collectFields(v, v.Type(), "", &s.Fields, supportedRule); err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -35,7 +40,7 @@ func IsZeroValue(v reflect.Value) bool {
 	return schematypes.IsZeroValue(v)
 }
 
-func parseValidateTag(path string, tag string) (map[string]string, error) {
+func parseValidateTag(path string, tag string, isSupportedRule func(string) bool) (map[string]string, error) {
 	if tag == "" {
 		return nil, nil
 	}
@@ -52,7 +57,7 @@ func parseValidateTag(path string, tag string) (map[string]string, error) {
 		if k == "" {
 			continue
 		}
-		if !rules.IsSupported(k) {
+		if isSupportedRule != nil && !isSupportedRule(k) {
 			return nil, fmt.Errorf("%w: unsupported validate rule %q for field %q", errs.InvalidSchema, k, path)
 		}
 		if hasValue {
@@ -68,7 +73,7 @@ func parseValidateTag(path string, tag string) (map[string]string, error) {
 	return parsedRules, nil
 }
 
-func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[]Field) error {
+func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[]Field, isSupportedRule func(string) bool) error {
 	for i := 0; i < t.NumField(); i++ {
 		structField := t.Field(i)
 		fieldValue := v.Field(i)
@@ -83,7 +88,7 @@ func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[
 		}
 
 		defaultValue := structField.Tag.Get("default")
-		validations, err := parseValidateTag(path, structField.Tag.Get("validate"))
+		validations, err := parseValidateTag(path, structField.Tag.Get("validate"), isSupportedRule)
 		if err != nil {
 			return err
 		}
@@ -101,7 +106,7 @@ func collectFields(v reflect.Value, t reflect.Type, parentPath string, fields *[
 		})
 
 		if structField.Type.Kind() == reflect.Struct {
-			if err := collectFields(fieldValue, structField.Type, path, fields); err != nil {
+			if err := collectFields(fieldValue, structField.Type, path, fields, isSupportedRule); err != nil {
 				return err
 			}
 		}

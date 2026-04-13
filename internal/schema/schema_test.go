@@ -154,6 +154,19 @@ func TestBuildReturnsInvalidSchemaForUnsupportedValidateRule(t *testing.T) {
 	}
 }
 
+func TestBuildAllowsCustomValidateRuleWithSupportChecker(t *testing.T) {
+	type config struct {
+		Age int `validate:"custom_rule=10"`
+	}
+
+	_, err := Build(&config{}, func(name string) bool {
+		return name == "custom_rule"
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v, want nil", err)
+	}
+}
+
 func TestIsZeroValue(t *testing.T) {
 	tests := []struct {
 		name  string
