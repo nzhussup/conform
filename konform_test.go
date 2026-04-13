@@ -118,6 +118,27 @@ func TestLoadSuccessWithEnvSource(t *testing.T) {
 	}
 }
 
+func TestLoadSuccessWithDotEnvFileSource(t *testing.T) {
+	cfg := &loadTestConfig{}
+
+	dir := t.TempDir()
+	dotEnvPath := filepath.Join(dir, ".env")
+	if err := os.WriteFile(dotEnvPath, []byte("NAME=api-dotenv\nPORT=7070\n"), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	_, err := Load(cfg, FromDotEnvFile(dotEnvPath))
+	if err != nil {
+		t.Fatalf("Load() error = %v, want nil", err)
+	}
+	if cfg.Name != "api-dotenv" {
+		t.Fatalf("Name = %q, want %q", cfg.Name, "api-dotenv")
+	}
+	if cfg.Port != 7070 {
+		t.Fatalf("Port = %d, want %d", cfg.Port, 7070)
+	}
+}
+
 func TestLoadReportsMultipleDecodeErrorsFromFile(t *testing.T) {
 	type config struct {
 		Name  string `key:"name"`

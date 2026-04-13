@@ -46,6 +46,13 @@ func FromEnv() Option {
 	}
 }
 
+func FromDotEnvFile(path string) Option {
+	return fromFile(path, errs.InvalidSchemaEmptyDotEnv, func(path string, callerDir string, _ common.UnknownKeySuggestionMode) sourceLoader {
+		source := envsource.NewDotEnvFileSource(path, callerDir)
+		return source.LoadFile
+	})
+}
+
 func FromYAMLFile(path string) Option {
 	return fromFile(path, errs.InvalidSchemaEmptyYAML, func(path string, callerDir string, suggestionMode common.UnknownKeySuggestionMode) sourceLoader {
 		source := yamlsource.NewFileSource(path, callerDir, suggestionMode)

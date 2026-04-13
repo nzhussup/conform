@@ -11,6 +11,10 @@ import (
 )
 
 func Load(sc *schema.Schema) error {
+	return loadWithLookup(sc, os.LookupEnv, "env")
+}
+
+func loadWithLookup(sc *schema.Schema, lookup func(string) (string, bool), sourcePrefix string) error {
 	if sc == nil {
 		return errs.InvalidSchemaNil
 	}
@@ -24,7 +28,7 @@ func Load(sc *schema.Schema) error {
 			continue
 		}
 
-		raw, ok := os.LookupEnv(envName)
+		raw, ok := lookup(envName)
 		if !ok {
 			continue
 		}
@@ -34,7 +38,7 @@ func Load(sc *schema.Schema) error {
 			fieldErrors = append(fieldErrors, errs.WrapDecode(errs.Decode, ctx, err))
 			continue
 		}
-		sc.Fields[i].Source = "env:" + envName
+		sc.Fields[i].Source = sourcePrefix + ":" + envName
 	}
 
 	if len(fieldErrors) > 0 {

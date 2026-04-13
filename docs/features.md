@@ -9,6 +9,7 @@ Your Go struct is the schema. Tags define mapping and behavior.
 - JSON files (`FromJSONFile`)
 - YAML files (`FromYAMLFile`)
 - TOML files (`FromTOMLFile`)
+- .env files (`FromDotEnvFile`)
 - JSON bytes (`FromJSONBytes`)
 - YAML bytes (`FromYAMLBytes`)
 - TOML bytes (`FromTOMLBytes`)

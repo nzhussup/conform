@@ -14,6 +14,7 @@ func Load(target any, opts ...Option) (*LoadReport, error)
 - `FromJSONFile(path string)`
 - `FromYAMLFile(path string)`
 - `FromTOMLFile(path string)`
+- `FromDotEnvFile(path string)`
 - `FromJSONBytes(data []byte)`
 - `FromYAMLBytes(data []byte)`
 - `FromTOMLBytes(data []byte)`

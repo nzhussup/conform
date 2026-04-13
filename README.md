@@ -41,7 +41,7 @@ Use Viper/Koanf when you need broader provider ecosystems, dynamic config workfl
 ## Key features
 
 - Schema-first configuration from typed Go structs
-- Multiple sources: environment variables, YAML/JSON/TOML files, YAML/JSON/TOML bytes
+- Multiple sources: environment variables, `.env` files, YAML/JSON/TOML files, YAML/JSON/TOML bytes
 - Defaults via struct tags
 - Validation rules (`required`, `min`, `max`, `len`, `minlen`, `maxlen`, `regex`, `oneof`, `nonzero`, `url`, `email`)
 - Strict mode (`konform.Strict()`) for unknown structured keys and mapping conflicts
@@ -90,6 +90,7 @@ func main() {
 	report, err := konform.Load(
 		&cfg,
 		konform.FromYAMLFile("config.yaml"),
+		konform.FromDotEnvFile(".env"),
 		konform.FromEnv(),
 		konform.WithUnknownKeySuggestionMode(konform.Warn),
 	)
@@ -107,7 +108,7 @@ func main() {
 `konform` applies values in this order:
 
 ```text
-defaults < file < env
+defaults < file < .env < env
 ```
 
 This behavior is controlled by the order of options passed to `Load`.

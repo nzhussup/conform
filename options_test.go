@@ -83,6 +83,55 @@ func TestFromEnv(t *testing.T) {
 	}
 }
 
+func TestFromDotEnvFile(t *testing.T) {
+	t.Run("empty path", func(t *testing.T) {
+		assertOptionError(t, FromDotEnvFile("")(nil), errs.InvalidSchemaEmptyDotEnv)
+	})
+
+	t.Run("nil load options", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, ".env")
+		if err := os.WriteFile(path, []byte("PORT=8084\n"), 0o600); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+		assertOptionError(t, FromDotEnvFile(path)(nil), errs.InvalidSchemaNilOptions)
+	})
+
+	t.Run("registers .env file source and loads value", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, ".env")
+		if err := os.WriteFile(path, []byte("PORT=8084\n"), 0o600); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+
+		o := &loadOptions{}
+		if err := FromDotEnvFile(path)(o); err != nil {
+			t.Fatalf("FromDotEnvFile() error = %v, want nil", err)
+		}
+		if got := len(o.sources); got != 1 {
+			t.Fatalf("len(sources) = %d, want 1", got)
+		}
+
+		var port int
+		sc := &schema.Schema{
+			Fields: []schema.Field{
+				{
+					Path:    "Port",
+					EnvName: "PORT",
+					Type:    reflect.TypeOf(0),
+					Value:   reflect.ValueOf(&port).Elem(),
+				},
+			},
+		}
+		if err := o.sources[0](sc); err != nil {
+			t.Fatalf("source() error = %v, want nil", err)
+		}
+		if port != 8084 {
+			t.Fatalf("Port = %d, want 8084", port)
+		}
+	})
+}
+
 func TestUnknownKeySuggestionOptions(t *testing.T) {
 	t.Run("nil load options", func(t *testing.T) {
 		err := WithUnknownKeySuggestionMode(Off)(nil)

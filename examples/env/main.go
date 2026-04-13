@@ -18,7 +18,9 @@ import (
 //
 // Usage:
 //
-//	set -a; source .env.local; set +a
+//	cat > .env.local <<EOF
+//	DATABASE_URL=postgres://localhost:5432/app
+//	EOF
 //	go run .
 //
 // Notes:
@@ -59,7 +61,7 @@ type Config struct {
 func main() {
 	var cfg Config
 
-	if _, err := konform.Load(&cfg, konform.FromEnv()); err != nil {
+	if _, err := konform.Load(&cfg, konform.FromDotEnvFile(".env.local"), konform.FromEnv()); err != nil {
 		log.Fatal(err)
 	}
 

@@ -17,6 +17,7 @@ var (
 	InvalidSchemaEmptyYAML      = fmt.Errorf("%w: yaml path must not be empty", InvalidSchema)
 	InvalidSchemaEmptyJSON      = fmt.Errorf("%w: json path must not be empty", InvalidSchema)
 	InvalidSchemaEmptyTOML      = fmt.Errorf("%w: toml path must not be empty", InvalidSchema)
+	InvalidSchemaEmptyDotEnv    = fmt.Errorf("%w: .env path must not be empty", InvalidSchema)
 	InvalidSchemaEmptyYAMLBytes = fmt.Errorf("%w: yaml bytes must not be empty", InvalidSchema)
 	InvalidSchemaEmptyJSONBytes = fmt.Errorf("%w: json bytes must not be empty", InvalidSchema)
 	InvalidSchemaEmptyTOMLBytes = fmt.Errorf("%w: toml bytes must not be empty", InvalidSchema)

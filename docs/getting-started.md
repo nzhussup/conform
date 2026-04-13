@@ -35,6 +35,7 @@ func main() {
 	report, err := konform.Load(
 		&cfg,
 		konform.FromYAMLFile("config.yaml"),
+		konform.FromDotEnvFile(".env"),
 		konform.FromEnv(),
 	)
 	if err != nil {
@@ -61,6 +62,7 @@ report, err := konform.Load(
 	&cfg,
 	konform.FromJSONFile("config.json"),
 	konform.FromYAMLFile("config.yaml"),
+	konform.FromDotEnvFile(".env"),
 	konform.FromEnv(),
 )
 ```
