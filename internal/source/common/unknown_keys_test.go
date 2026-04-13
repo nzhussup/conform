@@ -162,6 +162,24 @@ func TestUnknownKeysBuildExpectedLookupPaths(t *testing.T) {
 	}
 }
 
+func TestUnknownKeysBuildExpectedLookupPathsSkipsEmptyLookup(t *testing.T) {
+	var value string
+	sc := &schema.Schema{
+		Fields: []schema.Field{
+			{
+				Path:  "",
+				Type:  reflect.TypeOf(""),
+				Value: reflect.ValueOf(&value).Elem(),
+			},
+		},
+	}
+
+	got := BuildExpectedLookupPaths(sc, map[string]string{})
+	if len(got) != 0 {
+		t.Fatalf("BuildExpectedLookupPaths() = %#v, want empty", got)
+	}
+}
+
 func TestUnknownKeysFindUnknownKeys(t *testing.T) {
 	doc := Document{
 		"server": map[string]any{
@@ -203,5 +221,19 @@ func TestUnknownKeysFlattenLeafPathsAndSliceToPathSet(t *testing.T) {
 		if _, ok := set[p]; !ok {
 			t.Fatalf("sliceToPathSet() missing path %q", p)
 		}
+	}
+}
+
+func TestUnknownKeysFlattenLeafPathsNilDoc(t *testing.T) {
+	if got := FlattenLeafPaths(nil); got != nil {
+		t.Fatalf("FlattenLeafPaths(nil) = %#v, want nil", got)
+	}
+}
+
+func TestFlattenLeafPathsSkipsEmptyPrefixForNonMapRoot(t *testing.T) {
+	paths := make([]string, 0)
+	flattenLeafPaths("", 42, &paths)
+	if len(paths) != 0 {
+		t.Fatalf("flattenLeafPaths('', non-map) = %#v, want empty", paths)
 	}
 }

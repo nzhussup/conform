@@ -171,3 +171,21 @@ func TestBuildReportResolvesAliasesAndZeroSource(t *testing.T) {
 		t.Fatalf("missing entry for database.url")
 	}
 }
+
+func TestResolveLookupPathForReport(t *testing.T) {
+	t.Run("uses explicit key name when present", func(t *testing.T) {
+		field := internalschema.Field{Path: "Server.Port", KeyName: "server_port"}
+		got := resolveLookupPathForReport(field, map[string]string{"Server": "server"})
+		if got != "server_port" {
+			t.Fatalf("resolveLookupPathForReport() = %q, want %q", got, "server_port")
+		}
+	})
+
+	t.Run("replaces full path when alias matches full field path", func(t *testing.T) {
+		field := internalschema.Field{Path: "Database.URL"}
+		got := resolveLookupPathForReport(field, map[string]string{"Database.URL": "database.url"})
+		if got != "database.url" {
+			t.Fatalf("resolveLookupPathForReport() = %q, want %q", got, "database.url")
+		}
+	})
+}

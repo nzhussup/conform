@@ -565,3 +565,19 @@ func assertOptionError(t *testing.T, err error, wantErr error) {
 		t.Fatalf("option(nil) error = %v, want wrapped %v", err, wantErr)
 	}
 }
+
+func TestCallerDirectory(t *testing.T) {
+	t.Run("returns directory for current frame", func(t *testing.T) {
+		got := callerDirectory(0)
+		if got == "" {
+			t.Fatalf("callerDirectory(0) = empty, want non-empty")
+		}
+	})
+
+	t.Run("returns empty when frame does not exist", func(t *testing.T) {
+		got := callerDirectory(1 << 20)
+		if got != "" {
+			t.Fatalf("callerDirectory(huge skip) = %q, want empty", got)
+		}
+	})
+}

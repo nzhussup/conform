@@ -81,6 +81,27 @@ func TestApply(t *testing.T) {
 			errType: nil,
 		},
 		{
+			name: "do not override non-zero value even when default exists",
+			args: args{
+				sc: func() *schema.Schema {
+					v := "already-set"
+					return &schema.Schema{
+						Fields: []schema.Field{
+							{
+								GoName:       "field1",
+								Path:         "Field1",
+								Type:         reflect.TypeOf(""),
+								Value:        reflect.ValueOf(&v).Elem(),
+								DefaultValue: "default1",
+							},
+						},
+					}
+				}(),
+			},
+			wantErr: false,
+			errType: nil,
+		},
+		{
 			name: "apply defaults to schema with invalid default value",
 			args: args{
 				sc: &schema.Schema{
@@ -114,6 +135,16 @@ func TestApply(t *testing.T) {
 			}
 			if tt.wantErr && !errors.Is(err, tt.errType) {
 				t.Errorf("Apply() error = %v, expected error type %v", err, tt.errType)
+			}
+
+			if tt.name == "do not override non-zero value even when default exists" {
+				got := tt.args.sc.Fields[0].Value.Interface().(string)
+				if got != "already-set" {
+					t.Fatalf("field value = %q, want %q", got, "already-set")
+				}
+				if src := tt.args.sc.Fields[0].Source; src != "" {
+					t.Fatalf("field source = %q, want empty", src)
+				}
 			}
 		})
 	}

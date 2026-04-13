@@ -1,7 +1,9 @@
 package common
 
 import (
+	"bytes"
 	"errors"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -269,4 +271,54 @@ func TestApply(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestApplyWrapperAndWarnMode(t *testing.T) {
+	var appName string
+	sc := &schema.Schema{
+		Fields: []schema.Field{
+			{
+				Path:  "AppName",
+				Type:  reflect.TypeOf(""),
+				Value: reflect.ValueOf(&appName).Elem(),
+			},
+		},
+	}
+
+	doc := Document{
+		"App": map[string]any{"Name": "konform"},
+	}
+
+	stderr := captureStderr(t, func() {
+		if err := Apply(sc, doc, "yaml"); err != nil {
+			t.Fatalf("Apply() error = %v, want nil", err)
+		}
+	})
+
+	if !strings.Contains(stderr, `konform: warning: yaml: unknown configuration key "App.Name"`) {
+		t.Fatalf("stderr = %q, want unknown key warning", stderr)
+	}
+	if appName != "" {
+		t.Fatalf("AppName = %q, want empty because no matching key", appName)
+	}
+}
+
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+	orig := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe() error = %v", err)
+	}
+	os.Stderr = w
+
+	fn()
+
+	_ = w.Close()
+	os.Stderr = orig
+
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	_ = r.Close()
+	return buf.String()
 }

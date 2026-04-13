@@ -59,6 +59,11 @@ func TestUrl(t *testing.T) {
 			wantTotal: 0,
 		},
 		{
+			name:      "url is trimmed before validation",
+			field:     makeStringField("URL", "  https://example.com/path  ", map[string]string{"url": ""}),
+			wantTotal: 0,
+		},
+		{
 			name:        "ws scheme is rejected",
 			field:       makeStringField("URL", "ws://example.com/socket", map[string]string{"url": ""}),
 			wantTotal:   1,
@@ -68,6 +73,13 @@ func TestUrl(t *testing.T) {
 		{
 			name:        "missing host is rejected",
 			field:       makeStringField("URL", "http://", map[string]string{"url": ""}),
+			wantTotal:   1,
+			wantErrType: errs.ValidationURL,
+			wantLike:    "allowed schemes [http https]",
+		},
+		{
+			name:        "http scheme with empty host and path is rejected",
+			field:       makeStringField("URL", "http:///only-path", map[string]string{"url": ""}),
 			wantTotal:   1,
 			wantErrType: errs.ValidationURL,
 			wantLike:    "allowed schemes [http https]",
