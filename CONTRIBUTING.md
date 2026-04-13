@@ -118,6 +118,8 @@ If your change affects user-facing behavior, please update one or more of:
 
 Releases and version tags are managed by the maintainer.
 
+On release tags, CI updates `version.go` with the tag version and commits it back to `main` together with changelog updates.
+
 Please do not create tags or prepare releases in pull requests unless explicitly requested.
 
 ## Review process

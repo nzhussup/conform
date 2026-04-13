@@ -15,6 +15,22 @@ Your Go struct is the schema. Tags define mapping and behavior.
 - TOML bytes (`FromTOMLBytes`)
 - Environment variables (`FromEnv`)
 
+### Environment prefixing
+
+Use `WithEnvPrefix` to prepend a prefix for all `env` tag lookups.
+
+- Applies to both `FromEnv` and `FromDotEnvFile`
+- Useful when your application namespaces variables (for example: `APP_`)
+
+```go
+konform.Load(
+	&cfg,
+	konform.FromDotEnvFile(".env"),
+	konform.FromEnv(),
+	konform.WithEnvPrefix("APP_"),
+)
+```
+
 ## Tags
 
 - `key`: structured source lookup path
@@ -37,6 +53,32 @@ Common rules include:
 - `nonzero`
 - `url`
 - `email`
+
+### Custom validators
+
+Register domain-specific validation rules with `WithCustomValidator` and use them in `validate` tags.
+
+- Signature: `func(value any, ruleValue string) error`
+- `ruleValue` comes from the tag argument (for example: `validate:"startswith=svc-"`)
+- Return `nil` when valid, or an `error` to fail validation
+
+```go
+startsWith := func(value any, ruleValue string) error {
+	raw, ok := value.(string)
+	if !ok {
+		return errors.New("expected string")
+	}
+	if !strings.HasPrefix(raw, ruleValue) {
+		return fmt.Errorf("must start with %q", ruleValue)
+	}
+	return nil
+}
+
+konform.Load(
+	&cfg,
+	konform.WithCustomValidator("startswith", startsWith),
+)
+```
 
 ## Unknown key handling
 

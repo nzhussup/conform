@@ -42,12 +42,21 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
           git checkout main
-          git add CHANGELOG.md
+
+          cat > version.go <<EOF
+          package konform
+
+          // Version is the current module version.
+          // It is updated by the release workflow from the release tag.
+          const Version = "${{ github.ref_name }}"
+          EOF
+
+          git add CHANGELOG.md version.go
 
           if git diff --cached --quiet; then
-            echo "No changelog changes"
+            echo "No changelog/version changes"
           else
-            git commit -m "docs: update changelog for ${{ github.ref_name }} [skip ci] [skip codeql]"
+            git commit -m "chore: update changelog and version for ${{ github.ref_name }} [skip ci] [skip codeql]"
             git push "https://x-access-token:${{ secrets.RELEASE_PUSH_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:main
           fi
 
