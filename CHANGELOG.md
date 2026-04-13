@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.0.0 - 2026-04-13
+
+
+
+### Chores
+
+- Update changelog and version for v0.4.0 [skip ci] [skip codeql]
+
+
+### Documentation
+
+- Improve documentation
+
+
+### Features
+
+- Integrate konform version into examples
+
+- Add codecov into ci
+
+- Increase test coverage
+
+- Increase test coverage
+
+
+### Fixes
+
+- Text unmarshaller
+
+- Ignore examples from codecov
+
+
+### minmaxing
+
+- Push test coverage to 100%
+
+
 ## v0.4.0 - 2026-04-13
 
 
