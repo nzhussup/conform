@@ -10,6 +10,10 @@ import (
 	internalvalidatetypes "github.com/nzhussup/konform/internal/validate/types"
 )
 
+// Load builds a schema from target and applies defaults, configured sources,
+// and validations in order.
+//
+// target must be a non-nil pointer to a struct.
 func Load(target any, opts ...Option) (*LoadReport, error) {
 	loadOpts := loadOptions{}
 

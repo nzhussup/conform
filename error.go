@@ -8,12 +8,17 @@ import (
 )
 
 var (
+	// ErrInvalidTarget indicates target passed to Load is invalid.
 	ErrInvalidTarget = errs.InvalidTarget
+	// ErrInvalidSchema indicates schema configuration or tags are invalid.
 	ErrInvalidSchema = errs.InvalidSchema
-	ErrDecode        = errs.Decode
-	ErrValidation    = errs.Validation
+	// ErrDecode indicates source decode or type conversion failure.
+	ErrDecode = errs.Decode
+	// ErrValidation indicates one or more validation rules failed.
+	ErrValidation = errs.Validation
 )
 
+// FieldError represents an error for a specific configuration field path.
 type FieldError struct {
 	Path string
 	Err  error
@@ -26,6 +31,7 @@ func (e FieldError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Path, errs.StripValidationPrefix(e.Err))
 }
 
+// ValidationError contains all field-level validation failures.
 type ValidationError struct {
 	Fields []FieldError
 }

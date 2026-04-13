@@ -9,16 +9,19 @@ import (
 	internalschema "github.com/nzhussup/konform/internal/schema"
 )
 
+// ReportEntry is a single resolved field in a LoadReport.
 type ReportEntry struct {
 	Path   string
 	Value  string
 	Source string
 }
 
+// LoadReport describes resolved values and their sources after loading.
 type LoadReport struct {
 	Entries []ReportEntry
 }
 
+// Print writes a tabular report to w.
 func (r *LoadReport) Print(w io.Writer) {
 	if r == nil || len(r.Entries) == 0 || w == nil {
 		return
